@@ -67,7 +67,7 @@ impl Lexer {
             c
         } else {
             self.error(self.line, "No more characters left?");
-            ' '
+            '\0'
         }
     }
 
