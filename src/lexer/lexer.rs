@@ -204,6 +204,16 @@ impl Lexer {
                     loop {
                         if self.peek() != '\n' && !self.is_at_end() {
                             self.advance();
+                        } else {
+                            self.tokens.push(
+                                Token::new(
+                                    TokenType::Comment,
+                                    String::from(self.source[self.start + 2..self.curr].trim()),
+                                    String::from(self.source[self.start..self.curr].trim()),
+                                    self.line
+                                )
+                            );
+                            return;
                         }
                     }
                 } else {
