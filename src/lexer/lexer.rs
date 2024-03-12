@@ -39,7 +39,7 @@ impl Lexer {
             start: 0,
             curr: 0,
             line: 1,
-            keywords: HashMap::from(kw),
+            keywords: kw,
         }
     }
 
@@ -62,15 +62,12 @@ impl Lexer {
     }
 
     fn advance(&mut self) -> char {
-        match self.source.chars().nth(self.curr) {
-            Some(c) => {
-                self.curr += 1;
-                return c
-            },
-            None => {
-                self.error(self.line, String::from("No more characters left?"));
-                return ' ';
-            }
+        return if let Some(c) = self.source.chars().nth(self.curr) {
+            self.curr += 1;
+            c
+        } else {
+            self.error(self.line, String::from("No more characters left?"));
+            ' '
         }
     }
 
@@ -89,7 +86,7 @@ impl Lexer {
 
     fn add_token(&mut self, token_type: TokenType) {
         let text = String::from(&self.source[self.start..self.curr]);
-        self.tokens.push(Token::new(token_type, text, String::from(""), self.line))
+        self.tokens.push(Token::new(token_type, text, String::new(), self.line));
     }
 
     fn add_string_token(&mut self, token_type: TokenType, literal: String) {
@@ -100,7 +97,7 @@ impl Lexer {
     fn string(&mut self) {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
-                self.line += 1
+                self.line += 1;
             }
             self.advance();
         }
@@ -116,12 +113,11 @@ impl Lexer {
     }
 
     fn is_digit(&mut self, c: char) -> bool {
-        c >= '0' && c <= '9'
+        c.is_ascii_digit()
     }
 
     fn is_alpha(&self, c: char) -> bool {
-        (c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
+        c.is_ascii_alphabetic() ||
         (c == '_')
     }
 
@@ -220,17 +216,7 @@ impl Lexer {
                     token = TokenType::FSlash;
                 }
             }
-            ' ' => {
-                return;
-            }
-            '\r' => {
-                return;
-            }
-            '\t' => {
-                return;
-            }
-            '\n' => {
-                self.line += 1;
+            ' ' | '\r' | '\t' | '\n' => {
                 return;
             }
             '"' => {
@@ -258,15 +244,15 @@ impl Lexer {
         };
         
         // Add the EOF token to the end of tokens list
-        self.tokens.push(Token::new(TokenType::Eof, String::from(""), String::from(""), self.line));
+        self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line));
         println!("{:?}", self.tokens);
     }
 
     fn error(&mut self, line: usize, message: String) {
-        self.report(line, String::from(""), message);
+        self.report(line, "", message);
     }
     
-    fn report(&mut self, line: usize, where_about: String, message: String) {
+    fn report(&mut self, line: usize, where_about: &str, message: String) {
         println!("[line {line}] Error {where_about}: {message}");
     }
 }
