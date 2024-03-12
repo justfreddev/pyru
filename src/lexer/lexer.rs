@@ -66,7 +66,7 @@ impl Lexer {
             self.curr += 1;
             c
         } else {
-            self.error(self.line, String::from("No more characters left?"));
+            self.error(self.line, "No more characters left?");
             ' '
         }
     }
@@ -103,7 +103,7 @@ impl Lexer {
         }
 
         if self.is_at_end() {
-            self.error(self.line, String::from("Unterminated string."));
+            self.error(self.line, "Unterminated string.");
         }
 
         self.advance();
@@ -229,7 +229,7 @@ impl Lexer {
                 } else if self.is_alpha(c) {
                     self.identifier();
                 } else {
-                    self.error(self.line, String::from("Unexpected character."));
+                    self.error(self.line, "Unexpected character.");
                 }
                 return;
             }
@@ -248,11 +248,11 @@ impl Lexer {
         println!("{:?}", self.tokens);
     }
 
-    fn error(&mut self, line: usize, message: String) {
+    fn error(&mut self, line: usize, message: &str) {
         self.report(line, "", message);
     }
     
-    fn report(&mut self, line: usize, where_about: &str, message: String) {
+    fn report(&mut self, line: usize, where_about: &str, message: &str) {
         println!("[line {line}] Error {where_about}: {message}");
     }
 }
