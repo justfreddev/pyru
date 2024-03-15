@@ -11,6 +11,7 @@ pub struct Lexer {
     curr: usize,
     line: usize,
     keywords: HashMap<String, TokenType>,
+    had_error: bool
 }
 
 impl Lexer {
@@ -40,6 +41,7 @@ impl Lexer {
             curr: 0,
             line: 1,
             keywords: kw,
+            had_error: false
         }
     }
 
@@ -93,7 +95,16 @@ impl Lexer {
         let text = String::from(&self.source[self.start..self.curr]);
         self.tokens.push(Token::new(token_type, text, literal, self.line));
     }
-
+    
+    fn is_digit(&mut self, c: char) -> bool {
+        c.is_ascii_digit()
+    }
+    
+    fn is_alpha(&self, c: char) -> bool {
+        c.is_ascii_alphabetic() ||
+        (c == '_')
+    }
+    
     fn string(&mut self) {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
@@ -110,15 +121,6 @@ impl Lexer {
 
         let value: String = String::from(&self.source[self.start + 1..self.curr - 1]);
         self.add_string_token(TokenType::String, value);
-    }
-
-    fn is_digit(&mut self, c: char) -> bool {
-        c.is_ascii_digit()
-    }
-
-    fn is_alpha(&self, c: char) -> bool {
-        c.is_ascii_alphabetic() ||
-        (c == '_')
     }
 
     fn number(&mut self) {
@@ -151,6 +153,29 @@ impl Lexer {
         };
 
         self.add_token(token_type);
+    }
+
+    fn comment(&mut self) {
+        if self.match_token('/') {
+            loop {
+                if self.peek() != '\n' && !self.is_at_end() {
+                    self.advance();
+                } else {
+                    self.tokens.push(
+                        Token::new(
+                            TokenType::Comment,
+                            String::from(self.source[self.start + 2..self.curr].trim()),
+                            String::from(self.source[self.start..self.curr].trim()),
+                            self.line
+                        )
+                    );
+                    return;
+                }
+            }
+        } else {
+            self.add_token(TokenType::FSlash);
+            return;
+        }
     }
 
     fn scan_token(&mut self) {
@@ -195,28 +220,11 @@ impl Lexer {
                     token = TokenType::Greater;
                 }
             }
-            '/' => {
-                if self.match_token('/') {
-                    loop {
-                        if self.peek() != '\n' && !self.is_at_end() {
-                            self.advance();
-                        } else {
-                            self.tokens.push(
-                                Token::new(
-                                    TokenType::Comment,
-                                    String::from(self.source[self.start + 2..self.curr].trim()),
-                                    String::from(self.source[self.start..self.curr].trim()),
-                                    self.line
-                                )
-                            );
-                            return;
-                        }
-                    }
-                } else {
-                    token = TokenType::FSlash;
-                }
-            }
             ' ' | '\r' | '\t' | '\n' => {
+                return;
+            }
+            '/' => {
+                self.comment();
                 return;
             }
             '"' => {
@@ -237,7 +245,7 @@ impl Lexer {
         self.add_token(token);
     }
 
-    pub fn scan(&mut self) {
+    pub fn scan(&mut self) -> bool {
         while !self.is_at_end() {
             self.start = self.curr;
             self.scan_token();
@@ -246,10 +254,12 @@ impl Lexer {
         // Add the EOF token to the end of tokens list
         self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line));
         println!("{:?}", self.tokens);
+        self.had_error
     }
 
     fn error(&mut self, line: usize, message: &str) {
         self.report(line, "", message);
+        self.had_error = true
     }
     
     fn report(&mut self, line: usize, where_about: &str, message: &str) {

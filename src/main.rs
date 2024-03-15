@@ -1,34 +1,47 @@
 #[path ="./lexer/lexer.rs"]
 mod lexer;
+
+#[path = "./parser/expr.rs"]
+mod expr;
+
 use std::io::Write;
 use lexer::Lexer;
+use expr::run_ast;
 
-struct Interpreter {}
+struct Interpreter {
+    had_error: bool,
+}
 
 impl Interpreter {
     fn new() -> Self {
-        Self {}
+        Self {
+            had_error: false,
+        }
     }
 
-    fn run(&self, source: String) {
+    fn run(&mut self, source: String) {
         let mut lexer = Lexer::new(source);
-        lexer.scan();
+        self.had_error = lexer.scan();
 
         for token in lexer.tokens {
             println!("{token}");
         }
+        self.had_error = false
     }
 }
 
 fn main() {
-    let interpreter = Interpreter::new();
 
-    loop {
-        let mut inp = String::new();
-        print!("> ");
-        std::io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut inp).unwrap();
+    run_ast();
 
-        interpreter.run(inp);
-    }
+    // let mut interpreter = Interpreter::new();
+
+    // loop {
+    //     let mut inp = String::new();
+    //     print!("> ");
+    //     std::io::stdout().flush().unwrap();
+    //     std::io::stdin().read_line(&mut inp).unwrap();
+
+    //     interpreter.run(inp);
+    // }
 }

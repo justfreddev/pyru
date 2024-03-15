@@ -21,8 +21,8 @@ pub enum TokenType {
 #[derive(Debug)]
 pub struct Token {
     token_type: TokenType,
-    lexeme: String,
-    _literal: String,
+    pub lexeme: String,
+    literal: String,
     _line: usize,
 }
 
@@ -31,7 +31,7 @@ impl Token {
         Self {
             token_type,
             lexeme,
-            _literal: literal,
+            literal: literal,
             _line: line,
         } 
     }
@@ -39,6 +39,6 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}({})", self.token_type, self.lexeme)
+        write!(f, "{:?}({}, {})", self.token_type, self.lexeme, if self.literal.len() != 0 {self.literal.clone()} else {String::from("N/A")})
     }
 }
