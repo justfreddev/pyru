@@ -174,7 +174,6 @@ impl Lexer {
             }
         } else {
             self.add_token(TokenType::FSlash);
-            return;
         }
     }
 
@@ -259,7 +258,7 @@ impl Lexer {
 
     fn error(&mut self, line: usize, message: &str) {
         self.report(line, "", message);
-        self.had_error = true
+        self.had_error = true;
     }
     
     fn report(&mut self, line: usize, where_about: &str, message: &str) {

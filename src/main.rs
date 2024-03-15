@@ -26,7 +26,7 @@ impl Interpreter {
         for token in lexer.tokens {
             println!("{token}");
         }
-        self.had_error = false
+        self.had_error = false;
     }
 }
 

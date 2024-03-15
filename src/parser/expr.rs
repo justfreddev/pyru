@@ -51,28 +51,25 @@ struct AstPrinter;
 impl Visitor<String> for AstPrinter {
     fn visit_binary_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Binary { left, operator, right } => self.parenthesize(operator.lexeme.clone(), vec![&*left, &*right]),
+            Expr::Binary { left, operator, right } => self.parenthesize(operator.lexeme.clone(), vec![left, right]),
             _ => panic!("Expected a binary expression")
         }
     }
 
     fn visit_grouping_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Grouping { expression } => self.parenthesize(String::from(""), vec![&*expression]),
+            Expr::Grouping { expression } => self.parenthesize(String::new(), vec![expression]),
             _ => panic!("Expected a group expression")
         }
     }
 
     fn visit_literal_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Literal { value, value_type } => match value_type {
-                LiteralType::Str => format!("\"{value}\""),
-                _ => {
-                    if value == "" {
-                        return String::from("nil");
-                    }
-                    value.clone()
+            Expr::Literal { value, value_type } => if let LiteralType::Str = value_type { format!("\"{value}\"") } else {
+                if value.is_empty() {
+                    return String::from("nil");
                 }
+                value.clone()
             },
             _ => panic!("Expcted a literal expression"),
         }
@@ -80,7 +77,7 @@ impl Visitor<String> for AstPrinter {
 
     fn visit_unary_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Unary { operator, right } => self.parenthesize(operator.lexeme.clone(), vec![&*right]),
+            Expr::Unary { operator, right } => self.parenthesize(operator.lexeme.clone(), vec![right]),
             _ => panic!("Expected a unary expression")
         }
     }
@@ -96,11 +93,11 @@ impl AstPrinter {
         string.push_str(&name);
 
         for expr in exprs {
-            string.push_str(" ");
+            string.push(' ');
             string.push_str(expr.accept(self).as_str());
         }
 
-        string.push_str(")");
+        string.push(' ');
 
         string
     }
@@ -109,12 +106,12 @@ impl AstPrinter {
 pub fn run_ast() {
     let expr = Expr::Binary{
         left: Box::from(Expr::Unary {
-            operator: Token::new(TokenType::Minus, String::from("-"), String::from(""), 1),
+            operator: Token::new(TokenType::Minus, String::from("-"), String::new(), 1),
             right: Box::new(Expr::Literal { value: "123".to_string(), value_type: LiteralType::Num })}),
-        operator: Token::new(TokenType::Asterisk, String::from("*"), String::from(""), 1),
+        operator: Token::new(TokenType::Asterisk, String::from("*"), String::new(), 1),
         right: Box::new(Expr::Grouping { expression: Box::new(Expr::Literal{ value: "45.67".to_string(), value_type: LiteralType::Str })})
     };
 
     let ast_expr = AstPrinter.print(&expr);
-    println!("{}", ast_expr);
+    println!("{ast_expr}");
 }

@@ -31,7 +31,7 @@ impl Token {
         Self {
             token_type,
             lexeme,
-            literal: literal,
+            literal,
             _line: line,
         } 
     }
@@ -39,6 +39,6 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}({}, {})", self.token_type, self.lexeme, if self.literal.len() != 0 {self.literal.clone()} else {String::from("N/A")})
+        write!(f, "{:?}({}, {})", self.token_type, self.lexeme, if self.literal.is_empty() {String::from("N/A")} else {self.literal.clone()})
     }
 }
