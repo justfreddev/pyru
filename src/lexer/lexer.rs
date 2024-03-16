@@ -1,8 +1,11 @@
-#[path ="./tokens.rs"]
+#[path = "../interpreter/interpreter.rs"]
+mod interpreter;
+
+#[path = "./tokens.rs"]
 mod tokens;
 
+use interpreter_v1::tokens::{Token, TokenType};
 use std::collections::HashMap;
-use tokens::{Token, TokenType};
 
 pub struct Lexer {
     source: String,
@@ -11,7 +14,7 @@ pub struct Lexer {
     curr: usize,
     line: usize,
     keywords: HashMap<String, TokenType>,
-    had_error: bool
+    had_error: bool,
 }
 
 impl Lexer {
@@ -236,7 +239,8 @@ impl Lexer {
                 } else if self.is_alpha(c) {
                     self.identifier();
                 } else {
-                    self.error(self.line, "Unexpected character.");
+                    interpreter::Interpreter::line_error(self.line, "Unexpected character.");
+                    // self.error(self.line, "Unexpected character.");
                 }
                 return;
             }
@@ -244,7 +248,13 @@ impl Lexer {
         self.add_token(token);
     }
 
-    pub fn scan(&mut self) -> bool {
+    fn print_tokens(&self) {
+        for token in &self.tokens {
+            println!("{token}");
+        }
+    }
+
+    pub fn scan(&mut self) -> Vec<Token> {
         while !self.is_at_end() {
             self.start = self.curr;
             self.scan_token();
@@ -252,8 +262,8 @@ impl Lexer {
         
         // Add the EOF token to the end of tokens list
         self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line));
-        println!("{:?}", self.tokens);
-        self.had_error
+        self.print_tokens();
+        self.tokens.clone()
     }
 
     fn error(&mut self, line: usize, message: &str) {

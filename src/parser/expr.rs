@@ -1,14 +1,16 @@
-#[path ="../lexer/tokens.rs"]
-mod tokens;
+use interpreter_v1::tokens::Token;
 
-use tokens::{Token, TokenType};
-
-enum LiteralType {
-    Str,
-    Num
+#[derive(Clone)]
+pub enum LiteralType {
+    Str(String),
+    Num(String),
+    True,
+    False,
+    Nil
 }
 
-enum Expr {
+#[derive(Clone)]
+pub enum Expr {
     Binary {
         left: Box<Expr>,
         operator: Token,
@@ -18,8 +20,7 @@ enum Expr {
         expression: Box<Expr>
     },
     Literal {
-        value: String,
-        value_type: LiteralType
+        value: LiteralType,
     },
     Unary {
         operator: Token,
@@ -45,7 +46,7 @@ impl Expr {
     }
 }
 
-struct AstPrinter;
+pub struct AstPrinter;
 
 
 impl Visitor<String> for AstPrinter {
@@ -65,12 +66,13 @@ impl Visitor<String> for AstPrinter {
 
     fn visit_literal_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Literal { value, value_type } => if let LiteralType::Str = value_type { format!("\"{value}\"") } else {
-                if value.is_empty() {
-                    return String::from("nil");
-                }
-                value.clone()
-            },
+            Expr::Literal { value } => match value {
+                LiteralType::Num(n) => n.to_string(),
+                LiteralType::Str(s) => s.to_string(),
+                LiteralType::True => "true".to_string(),
+                LiteralType::False => "false".to_string(),
+                LiteralType::Nil => "nil".to_string()
+            }
             _ => panic!("Expcted a literal expression"),
         }
     }
@@ -84,7 +86,7 @@ impl Visitor<String> for AstPrinter {
 }
 
 impl AstPrinter {
-    fn print(&mut self, expr: &Expr) -> String {
+    pub fn print(&mut self, expr: Expr) -> String {
         expr.accept(self)
     }
 
@@ -101,17 +103,4 @@ impl AstPrinter {
 
         string
     }
-}
-
-pub fn run_ast() {
-    let expr = Expr::Binary{
-        left: Box::from(Expr::Unary {
-            operator: Token::new(TokenType::Minus, String::from("-"), String::new(), 1),
-            right: Box::new(Expr::Literal { value: "123".to_string(), value_type: LiteralType::Num })}),
-        operator: Token::new(TokenType::Asterisk, String::from("*"), String::new(), 1),
-        right: Box::new(Expr::Grouping { expression: Box::new(Expr::Literal{ value: "45.67".to_string(), value_type: LiteralType::Str })})
-    };
-
-    let ast_expr = AstPrinter.print(&expr);
-    println!("{ast_expr}");
 }
