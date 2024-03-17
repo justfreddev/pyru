@@ -1,10 +1,10 @@
 use std::fmt;
 use interpreter_v1::tokens::Token;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LiteralType {
     Str(String),
-    Num(String),
+    Num(f64),
     True,
     False,
     Nil
@@ -52,7 +52,7 @@ impl fmt::Display for Expr {
     }
 }
 
-trait Visitor<T> {
+pub trait Visitor<T> {
     fn visit_binary_expr(&mut self, expr: &Expr) -> T;
     fn visit_grouping_expr(&mut self, expr: &Expr) -> T;
     fn visit_literal_expr(&mut self, expr: &Expr) -> T;
@@ -60,7 +60,7 @@ trait Visitor<T> {
 }
 
 impl Expr {
-    fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
+    pub fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
         match self {
             Expr::Binary { .. } => visitor.visit_binary_expr(self),
             Expr::Grouping { .. } => visitor.visit_grouping_expr(self),

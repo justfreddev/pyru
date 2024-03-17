@@ -46,7 +46,9 @@ impl Parser {
             &TokenType::Greater,
             &TokenType::GreaterEqual,
             &TokenType::Less,
-            &TokenType::LessEqual
+            &TokenType::LessEqual,
+            &TokenType::BangEqual,
+            &TokenType::EqualEqual
             ]) {
                 let operator = self.previous().clone();
                 let right = self.term();
@@ -113,7 +115,16 @@ impl Parser {
         };
     
         if self.match_token(vec![&TokenType::Num, &TokenType::String]) {
-            return Expr::Literal { value: LiteralType::Str(self.previous().literal.clone()) };
+            match self.previous().token_type {
+                TokenType::String => return Expr::Literal { value: LiteralType::Str(self.previous().literal.clone()) },
+                TokenType::Num => {
+                    match self.previous().literal.clone().trim().parse() {
+                        Ok(n) => return Expr::Literal { value: LiteralType::Num(n) },
+                        Err(_) => panic!("Why tf")
+                    };
+                },
+                _ => panic!("Expected a String or Num TokenType")
+            }
         }
 
         if self.match_token(vec![&TokenType::LeftParen]) {
@@ -169,7 +180,7 @@ impl Parser {
         panic!("Parse error.");
     }
 
-    fn synchronize(&mut self) {
+    fn _synchronize(&mut self) {
         self.advance();
 
         while !self.is_at_end() {

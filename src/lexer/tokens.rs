@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace, Comma,
     Dot, Minus, Plus, Semicolon, FSlash, Asterisk,
@@ -27,6 +27,7 @@ pub struct Token {
 }
 
 impl Token {
+    #[must_use]
     pub fn new(token_type: TokenType, lexeme: String, literal: String, line: usize) -> Self {
         Self {
             token_type,
