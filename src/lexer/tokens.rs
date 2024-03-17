@@ -32,7 +32,7 @@ impl Token {
             token_type,
             lexeme,
             literal,
-            line: line,
+            line,
         } 
     }
 }

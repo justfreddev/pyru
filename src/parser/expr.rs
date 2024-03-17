@@ -1,6 +1,7 @@
+use std::fmt;
 use interpreter_v1::tokens::Token;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LiteralType {
     Str(String),
     Num(String),
@@ -9,7 +10,7 @@ pub enum LiteralType {
     Nil
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -25,6 +26,29 @@ pub enum Expr {
     Unary {
         operator: Token,
         right: Box<Expr>
+    }
+}
+
+impl fmt::Display for LiteralType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LiteralType::Str(s) => write!(f, "Str({s})"),
+            LiteralType::Num(n) => write!(f, "Num({n})"),
+            LiteralType::True => write!(f, "True"),
+            LiteralType::False => write!(f, "False"),
+            LiteralType::Nil => write!(f, "Nil"),
+        }
+    }
+}
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expr::Binary{left, operator, right} => write!(f, "Binary({left} {operator} {right})"),
+            Expr::Grouping { expression } => write!(f, "Grouping({expression})"),
+            Expr::Literal { value } => write!(f, "Literal({value})"),
+            Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})")
+        }
     }
 }
 
@@ -52,14 +76,14 @@ pub struct AstPrinter;
 impl Visitor<String> for AstPrinter {
     fn visit_binary_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Binary { left, operator, right } => self.parenthesize(operator.lexeme.clone(), vec![left, right]),
+            Expr::Binary { left, operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![left, right]),
             _ => panic!("Expected a binary expression")
         }
     }
 
     fn visit_grouping_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Grouping { expression } => self.parenthesize(String::new(), vec![expression]),
+            Expr::Grouping { expression } => self.parenthesize("", vec![expression]),
             _ => panic!("Expected a group expression")
         }
     }
@@ -79,18 +103,18 @@ impl Visitor<String> for AstPrinter {
 
     fn visit_unary_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Unary { operator, right } => self.parenthesize(operator.lexeme.clone(), vec![right]),
+            Expr::Unary { operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![right]),
             _ => panic!("Expected a unary expression")
         }
     }
 }
 
 impl AstPrinter {
-    pub fn print(&mut self, expr: Expr) -> String {
+    pub fn print(&mut self, expr: &Expr) -> String {
         expr.accept(self)
     }
 
-    fn parenthesize(&mut self, name: String, exprs: Vec<&Expr>) -> String {
+    fn parenthesize(&mut self, name: &str, exprs: Vec<&Expr>) -> String {
         let mut string = String::from("(");
         string.push_str(&name);
 
@@ -99,7 +123,7 @@ impl AstPrinter {
             string.push_str(expr.accept(self).as_str());
         }
 
-        string.push(' ');
+        string.push(')');
 
         string
     }

@@ -1,11 +1,9 @@
-#[path = "../interpreter/interpreter.rs"]
-mod interpreter;
-
 #[path = "./tokens.rs"]
 mod tokens;
 
 use interpreter_v1::tokens::{Token, TokenType};
 use std::collections::HashMap;
+use crate::interpreter;
 
 pub struct Lexer {
     source: String,
@@ -240,7 +238,6 @@ impl Lexer {
                     self.identifier();
                 } else {
                     interpreter::Interpreter::line_error(self.line, "Unexpected character.");
-                    // self.error(self.line, "Unexpected character.");
                 }
                 return;
             }
@@ -248,7 +245,7 @@ impl Lexer {
         self.add_token(token);
     }
 
-    fn print_tokens(&self) {
+    fn _print_tokens(&self) {
         for token in &self.tokens {
             println!("{token}");
         }
@@ -260,9 +257,7 @@ impl Lexer {
             self.scan_token();
         };
         
-        // Add the EOF token to the end of tokens list
         self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line));
-        self.print_tokens();
         self.tokens.clone()
     }
 

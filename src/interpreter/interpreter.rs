@@ -5,14 +5,11 @@ use crate::parser::Parser;
 use crate::expr::AstPrinter;
 
 pub struct Interpreter {
-    had_error: bool,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {
-            had_error: false,
-        }
+        Self {}
     }
 
     pub fn run(&self, source: String) {
@@ -22,7 +19,7 @@ impl Interpreter {
         let mut parser = Parser::new(tokens);
         let expression = parser.parse();
 
-        println!("{}", AstPrinter.print(expression));
+        println!("{}", AstPrinter.print(&expression));
     }
 
     pub fn line_error(line: usize, message: &str) {
@@ -33,7 +30,7 @@ impl Interpreter {
         println!("[line {line}] Error {where_about}: {message}");
     }
 
-    pub fn token_error(token: Token, message: &str) {
+    pub fn token_error(token: &Token, message: &str) {
         if token.token_type == TokenType::Eof {
             Interpreter::report(token.line, " at end", message);
         } else {

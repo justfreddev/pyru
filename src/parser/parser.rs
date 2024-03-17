@@ -1,7 +1,6 @@
-#[path = "../interpreter/interpreter.rs"]
-mod interpreter;
 
 use interpreter_v1::tokens::{Token, TokenType};
+use crate::interpreter;
 use crate::expr::{Expr, LiteralType};
 
 pub struct Parser {
@@ -26,26 +25,22 @@ impl Parser {
     }
 
     fn equality(&mut self) -> Expr {
-        let mut new_expr = Expr::Literal{ value: LiteralType::Nil };
-
-        let expr: Expr = self.comparison();
+        let mut expr: Expr = self.comparison();
 
         while self.match_token(vec![&TokenType::Bang, &TokenType::EqualEqual]) {
             let operator = self.previous().clone();
             let right = self.comparison();
-            let expr = Expr::Binary{
+            expr = Expr::Binary{
                 left: Box::new(expr.clone()),
                 operator,
                 right: Box::new(right)
             };
-            new_expr = expr.clone();
         };
-        new_expr
+        expr
     }
 
     fn comparison(&mut self) -> Expr {
-        let mut new_expr = Expr::Literal{ value: LiteralType::Nil };
-        let expr: Expr = self.term();
+        let mut expr: Expr = self.term();
 
         while self.match_token(vec![
             &TokenType::Greater,
@@ -55,49 +50,43 @@ impl Parser {
             ]) {
                 let operator = self.previous().clone();
                 let right = self.term();
-                let expr = Expr::Binary {
+                expr = Expr::Binary {
                     left: Box::new(expr.clone()),
                     operator,
                     right: Box::new(right)
                 };
-                new_expr = expr.clone();
             }
-        new_expr
+        expr
     }
 
     fn term(&mut self) -> Expr {
-        let mut new_expr = Expr::Literal{ value: LiteralType::Nil };
-        let expr = self.factor();
+        let mut expr = self.factor();
 
         while self.match_token(vec![&TokenType::Minus, &TokenType::Plus]) {
             let operator = self.previous().clone();
             let right = self.factor();
-            let expr = Expr::Binary {
+            expr = Expr::Binary {
                 left: Box::new(expr.clone()),
                 operator,
                 right: Box::new(right)
             };
-            new_expr = expr.clone();
         }
-        new_expr
+        expr
     }
 
     fn factor(&mut self) -> Expr {
-        let mut new_expr = Expr::Literal{ value: LiteralType::Nil };
-        let expr = self.unary();
+        let mut expr = self.unary();
 
         while self.match_token(vec![&TokenType::FSlash, &TokenType::Asterisk]) {
             let operator = self.previous().clone();
             let right = self.unary();
-            let expr = Expr::Binary {
+            expr = Expr::Binary {
                 left: Box::new(expr.clone()),
                 operator,
                 right: Box::new(right)
             };
-            new_expr = expr.clone();
         }
-
-        new_expr
+        expr
     }
 
     fn unary(&mut self) -> Expr {
@@ -129,13 +118,13 @@ impl Parser {
 
         if self.match_token(vec![&TokenType::LeftParen]) {
             let expr = self.expression();
-            // self.consume(TokenType::RightParen, "Expect ')' after expression.");
+            self.consume(&TokenType::RightParen, "Expect ')' after expression.");
             return Expr::Grouping { expression: Box::new(expr) };
         }
 
         println!("{}", self.peek().clone());
 
-        interpreter::Interpreter::token_error(self.peek().clone(), "Expected expression.");
+        interpreter::Interpreter::token_error(self.peek(), "Expected expression.");
         Expr::Literal{ value: LiteralType::Nil }
     }
 
@@ -156,7 +145,7 @@ impl Parser {
 
     fn advance(&mut self) -> &Token {
         if !self.is_at_end() {self.current += 1};
-        &self.previous()
+        self.previous()
     }
 
     fn is_at_end(&self) -> bool {
@@ -171,12 +160,12 @@ impl Parser {
         &self.tokens[self.current - 1]
     }
 
-    fn consume(&mut self, token_type: TokenType, message: &str) -> Token {
+    fn consume(&mut self, token_type: &TokenType, message: &str) -> Token {
         if self.check(&token_type) {
             return self.advance().clone();
         };
 
-        interpreter::Interpreter::token_error(self.peek().clone(), message);
+        interpreter::Interpreter::token_error(self.peek(), message);
         panic!("Parse error.");
     }
 
