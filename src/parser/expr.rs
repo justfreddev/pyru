@@ -110,13 +110,13 @@ impl Visitor<String> for AstPrinter {
 }
 
 impl AstPrinter {
-    pub fn print(&mut self, expr: &Expr) -> String {
+    pub fn _print(&mut self, expr: &Expr) -> String {
         expr.accept(self)
     }
 
     fn parenthesize(&mut self, name: &str, exprs: Vec<&Expr>) -> String {
         let mut string = String::from("(");
-        string.push_str(&name);
+        string.push_str(name);
 
         for expr in exprs {
             string.push(' ');

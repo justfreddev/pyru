@@ -1,6 +1,3 @@
-#[path = "./tokens.rs"]
-mod tokens;
-
 use interpreter_v1::tokens::{Token, TokenType};
 use std::collections::HashMap;
 use crate::interpreter;
@@ -149,7 +146,7 @@ impl Lexer {
 
         let text = String::from(&self.source[self.start..self.curr]);
         let token_type: TokenType = match self.keywords.get(&text) {
-            Some(v) => v.clone(),
+            Some(v) => *v,
             None => TokenType::Identifier,
         };
 

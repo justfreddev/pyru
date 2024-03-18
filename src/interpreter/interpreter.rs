@@ -1,6 +1,7 @@
 use interpreter_v1::tokens::{Token, TokenType};
 
-use crate::expr::{Expr, LiteralType, Visitor};
+use crate::expr::{self, Expr, LiteralType};
+use crate::stmt::{self, Stmt};
 
 pub struct Interpreter;
 
@@ -25,38 +26,60 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, expression: Expr) {
-        let result = self.evaluate(expression);
-        match result {
-            LiteralType::Str(s) => println!("{s}"),
-            LiteralType::Num(n) => println!("{}", n.to_string()),
-            LiteralType::True => println!("True"),
-            LiteralType::False => println!("False"),
-            LiteralType::Nil => println!("Nil"),
+    pub fn interpret(&mut self, statements: Vec<Stmt>) {
+
+        for stmt in statements {
+            self.execute(&stmt);
         }
+
+        // let result = self.evaluate(expression);
+        // match result {
+        //     LiteralType::Str(s) => println!("{s}"),
+        //     LiteralType::Num(n) => println!("{}", n.to_string()),
+        //     LiteralType::True => println!("True"),
+        //     LiteralType::False => println!("False"),
+        //     LiteralType::Nil => println!("Nil"),
+        // }
     }
 
-    pub fn evaluate(&mut self, expr: Expr) -> LiteralType {
+    pub fn evaluate(&mut self, expr: &Expr) -> LiteralType {
         expr.accept(self)
     }
 
-    fn unbox<T>(&mut self, value: Box<T>) -> T {
-        *value
+    pub fn execute(&mut self, stmt: &Stmt) {
+        stmt.accept(self);
     }
 
-    fn is_truthy(&mut self, object: LiteralType) -> bool {
+    fn unbox<T>(&mut self, value: T) -> T {
+        value
+    }
+
+    fn is_truthy(&mut self, object: &LiteralType) -> bool {
+        !matches!(object, LiteralType::Nil | LiteralType::False)
+    }
+
+    fn is_equal(&mut self, a: &LiteralType, b: &LiteralType) -> bool {
+        *a == *b
+    }
+
+    fn stringify(&self, object: LiteralType) -> String {
         match object {
-            LiteralType::Nil | LiteralType::False => false,
-            _ => true,
+            LiteralType::Num(n) => {
+                let mut text = n.to_string();
+                if text.ends_with(".0") {
+                    text.truncate(text.len() - 2);
+                }
+                text
+            }
+            LiteralType::Str(s) => s,
+            LiteralType::True => "true".to_string(),
+            LiteralType::False => "false".to_string(),
+            LiteralType::Nil => "nil".to_string(),
         }
-    }
-
-    fn is_equal(&mut self, a: LiteralType, b: LiteralType) -> bool {
-        a == b
     }
 }
 
-impl Visitor<LiteralType> for Interpreter {
+impl expr::Visitor<LiteralType> for Interpreter {
     fn visit_literal_expr(&mut self, expr: &Expr) -> LiteralType {
         match expr {
             Expr::Literal { value } => value.clone(),
@@ -68,7 +91,7 @@ impl Visitor<LiteralType> for Interpreter {
         match expr {
             Expr::Grouping { expression } => {
                 let expression_value = self.unbox(expression.clone());
-                self.evaluate(expression_value)
+                self.evaluate(&expression_value)
             },
             _ => panic!("Expected a group expression")
         }
@@ -78,66 +101,47 @@ impl Visitor<LiteralType> for Interpreter {
         match expr {
             Expr::Binary { left, operator, right } => {
                 let left_value = self.unbox(left.clone());
-                let left = self.evaluate(left_value);
+                let left = self.evaluate(&left_value);
                 let right_value = self.unbox(right.clone());
-                let right = self.evaluate(right_value);
+                let right = self.evaluate(&right_value);
                 match operator.token_type {
                     TokenType::Greater => {
                         if let LiteralType::Num(ln) = left {
                             if let LiteralType::Num(rn) = right {
-                                match ln > rn {
-                                    true => return LiteralType::True,
-                                    false => return LiteralType::False
-                                }
+                                if ln > rn { return LiteralType::True } return LiteralType::False
                             }
                         }
-                        panic!("Expected a number 6")
+                        panic!("Expected a number")
                     },
                     TokenType::GreaterEqual => {
                         if let LiteralType::Num(ln) = left {
                             if let LiteralType::Num(rn) = right {
-                                match ln >= rn {
-                                    true => return LiteralType::True,
-                                    false => return LiteralType::False
-                                }
+                                if ln >= rn { return LiteralType::True } return LiteralType::False
                             }
                         }
-                        panic!("Expected a number 7")
+                        panic!("Expected a number")
                     },
                     TokenType::Less => {
                         if let LiteralType::Num(ln) = left {
                             if let LiteralType::Num(rn) = right {
-                                match ln < rn {
-                                    true => return LiteralType::True,
-                                    false => return LiteralType::False
-                                }
+                                if ln < rn { return LiteralType::True } return LiteralType::False
                             }
                         }
-                        panic!("Expected a number 8")
+                        panic!("Expected a number")
                     },
                     TokenType::LessEqual => {
                         if let LiteralType::Num(ln) = left {
                             if let LiteralType::Num(rn) = right {
-                                match ln <= rn {
-                                    true => return LiteralType::True,
-                                    false => return LiteralType::False
-                                }
+                                if ln <= rn { return LiteralType::True } return LiteralType::False
                             }
                         }
-                        panic!("Expected a number 6")
+                        panic!("Expected a number")
                     },
                     TokenType::BangEqual => {
-                        
-                        match !self.is_equal(left, right) {
-                            true => return LiteralType::True,
-                            false => return LiteralType::False
-                        }
+                        if !self.is_equal(&left, &right) { return LiteralType::True } return LiteralType::False
                     },
                     TokenType::EqualEqual => {
-                        match self.is_equal(left, right) {
-                            true => return LiteralType::True,
-                            false => return LiteralType::False
-                        }
+                        if self.is_equal(&left, &right) { return LiteralType::True } return LiteralType::False
                     },
                     TokenType::Minus => {
                         if let LiteralType::Num(ln) = left {
@@ -145,7 +149,7 @@ impl Visitor<LiteralType> for Interpreter {
                                 return LiteralType::Num(ln - rn);
                             };
                         };
-                        panic!("Expected a number 3")
+                        panic!("Expected a number")
                     },
                     TokenType::Plus => {
                         if let LiteralType::Num(ln) = left {
@@ -166,7 +170,7 @@ impl Visitor<LiteralType> for Interpreter {
                                 return LiteralType::Num(ln / rn);
                             }
                         }
-                        panic!("Expected a number 4")
+                        panic!("Expected a number")
                     },
                     TokenType::Asterisk => {
                         if let LiteralType::Num(ln) = left {
@@ -174,7 +178,7 @@ impl Visitor<LiteralType> for Interpreter {
                                 return LiteralType::Num(ln * rn);
                             };
                         };
-                        panic!("Expected a number 5")
+                        panic!("Expected a number")
                     },
                     _ => return LiteralType::Nil,
                 };
@@ -187,18 +191,36 @@ impl Visitor<LiteralType> for Interpreter {
         match expr {
             Expr::Unary { operator, right } => {
                 let right_value = self.unbox(right.clone());
-                let right = self.evaluate(right_value);
+                let right = self.evaluate(&right_value);
                 match operator.token_type {
-                    TokenType::Bang => match !self.is_truthy(right) {
-                        true => LiteralType::True,
-                        false => LiteralType::False,
-                    },
+                    TokenType::Bang => if self.is_truthy(&right) { LiteralType::False } else { LiteralType::True },
                     TokenType::Minus => right,
                     _ => panic!("Expected a minus"),
                 };
                 return LiteralType::Nil
             },
             _ => panic!("Expected a unary expression")
+        }
+    }
+}
+
+impl stmt::Visitor<()> for Interpreter {
+    fn visit_expression_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Expression { expression } => {
+                self.evaluate(&expression.clone());
+            },
+            Stmt::Print { .. } => panic!("Expected an expression statement")
+        }
+    }
+
+    fn visit_print_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Print { expression } => {
+                let value = self.evaluate(&expression.clone());
+                println!("{}", self.stringify(value));
+            },
+            Stmt::Expression { .. } => panic!("Exepcted a print statement")
         }
     }
 }

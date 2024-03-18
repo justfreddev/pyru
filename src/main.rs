@@ -1,6 +1,9 @@
 #[path = "./parser/expr.rs"]
 mod expr;
 
+#[path = "./parser/stmt.rs"]
+mod stmt;
+
 #[path = "./lexer/lexer.rs"]
 mod lexer;
 
@@ -13,7 +16,7 @@ mod interpreter;
 use std::io::Write;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::expr::AstPrinter;
+// use crate::expr::AstPrinter;
 
 use interpreter::Interpreter;
 
@@ -22,12 +25,12 @@ fn run(source: String) {
     let tokens = lexer.scan();
 
     let mut parser = Parser::new(tokens);
-    let expression = parser.parse();
+    let statements = parser.parse();
 
-    println!("{}", AstPrinter.print(&expression));
+    // println!("{}", AstPrinter.print(&expression));
 
     let mut interpreter = Interpreter::new();
-    interpreter.interpret(expression);
+    interpreter.interpret(statements);
 }
 
 fn main() {

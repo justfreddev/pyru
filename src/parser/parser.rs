@@ -1,7 +1,8 @@
-
 use interpreter_v1::tokens::{Token, TokenType};
+
 use crate::interpreter;
 use crate::expr::{Expr, LiteralType};
+use crate::stmt::Stmt;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -16,12 +17,35 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Expr {
-        self.expression()
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements: Vec<Stmt> = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement());
+        }
+
+        statements
     }
 
     fn expression(&mut self) -> Expr {
         self.equality()
+    }
+
+    fn statement(&mut self) -> Stmt {
+        if self.match_token(vec![&TokenType::Print]) {return self.print_statement()};
+
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let value = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after value.");
+        Stmt::Print{ expression: value }
+    }
+
+    fn expression_statement(&mut self) -> Stmt {
+        let expr = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.");
+        Stmt::Expression{ expression: expr }
     }
 
     fn equality(&mut self) -> Expr {
@@ -118,10 +142,8 @@ impl Parser {
             match self.previous().token_type {
                 TokenType::String => return Expr::Literal { value: LiteralType::Str(self.previous().literal.clone()) },
                 TokenType::Num => {
-                    match self.previous().literal.clone().trim().parse() {
-                        Ok(n) => return Expr::Literal { value: LiteralType::Num(n) },
-                        Err(_) => panic!("Why tf")
-                    };
+                    let n = self.previous().literal.clone().trim().parse().expect("Why tf");
+                    return Expr::Literal { value: LiteralType::Num(n) };
                 },
                 _ => panic!("Expected a String or Num TokenType")
             }
@@ -129,7 +151,7 @@ impl Parser {
 
         if self.match_token(vec![&TokenType::LeftParen]) {
             let expr = self.expression();
-            self.consume(&TokenType::RightParen, "Expect ')' after expression.");
+            self.consume(TokenType::RightParen, "Expect ')' after expression.");
             return Expr::Grouping { expression: Box::new(expr) };
         }
 
@@ -141,7 +163,7 @@ impl Parser {
 
     fn match_token(&mut self, types: Vec<&TokenType>) -> bool {
         for token_type in types {
-            if self.check(token_type) {
+            if self.check(*token_type) {
                 self.advance();
                 return true;
             }
@@ -149,9 +171,9 @@ impl Parser {
         false
     }
 
-    fn check(&mut self, token_type: &TokenType) -> bool {
+    fn check(&mut self, token_type: TokenType) -> bool {
         if self.is_at_end() {return false};
-        return self.peek().token_type == *token_type;
+        return self.peek().token_type == token_type;
     }
 
     fn advance(&mut self) -> &Token {
@@ -171,8 +193,8 @@ impl Parser {
         &self.tokens[self.current - 1]
     }
 
-    fn consume(&mut self, token_type: &TokenType, message: &str) -> Token {
-        if self.check(&token_type) {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Token {
+        if self.check(token_type) {
             return self.advance().clone();
         };
 
