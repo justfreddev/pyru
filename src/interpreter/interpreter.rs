@@ -1,13 +1,18 @@
 use interpreter_v1::tokens::{Token, TokenType};
 
+use crate::environment::Environment;
 use crate::expr::{self, Expr, LiteralType};
 use crate::stmt::{self, Stmt};
 
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Environment
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self
+        Self {
+            environment: Environment::new()
+        }
     }
 
     pub fn line_error(line: usize, message: &str) {
@@ -32,14 +37,6 @@ impl Interpreter {
             self.execute(&stmt);
         }
 
-        // let result = self.evaluate(expression);
-        // match result {
-        //     LiteralType::Str(s) => println!("{s}"),
-        //     LiteralType::Num(n) => println!("{}", n.to_string()),
-        //     LiteralType::True => println!("True"),
-        //     LiteralType::False => println!("False"),
-        //     LiteralType::Nil => println!("Nil"),
-        // }
     }
 
     pub fn evaluate(&mut self, expr: &Expr) -> LiteralType {
@@ -202,6 +199,13 @@ impl expr::Visitor<LiteralType> for Interpreter {
             _ => panic!("Expected a unary expression")
         }
     }
+
+    fn visit_variable_expr(&mut self, expr: &Expr) -> LiteralType {
+        match expr {
+            Expr::Var { name } => self.environment.get(name.clone()),
+            _ => panic!("Expected a variable expression")
+        }
+    }
 }
 
 impl stmt::Visitor<()> for Interpreter {
@@ -210,7 +214,7 @@ impl stmt::Visitor<()> for Interpreter {
             Stmt::Expression { expression } => {
                 self.evaluate(&expression.clone());
             },
-            Stmt::Print { .. } => panic!("Expected an expression statement")
+            _ => panic!("Expected an expression statement"),
         }
     }
 
@@ -220,7 +224,23 @@ impl stmt::Visitor<()> for Interpreter {
                 let value = self.evaluate(&expression.clone());
                 println!("{}", self.stringify(value));
             },
-            Stmt::Expression { .. } => panic!("Exepcted a print statement")
+            _ => panic!("Exepcted a print statement")
+        }
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &Stmt) -> () {
+        match stmt {
+            Stmt::Var { name, initializer } => {
+                let mut value = LiteralType::Nil;
+
+                if let Some(initializer_expr) = initializer {
+                    value = self.evaluate(initializer_expr);
+                }
+
+                self.environment.define(name.lexeme.clone(), value);
+
+            },
+            _ => panic!("Expected a var statement")
         }
     }
 }

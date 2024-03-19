@@ -21,11 +21,14 @@ pub enum Expr {
         expression: Box<Expr>
     },
     Literal {
-        value: LiteralType,
+        value: LiteralType
     },
     Unary {
         operator: Token,
         right: Box<Expr>
+    },
+    Var {
+        name: Token
     }
 }
 
@@ -47,7 +50,8 @@ impl fmt::Display for Expr {
             Expr::Binary{left, operator, right} => write!(f, "Binary({left} {operator} {right})"),
             Expr::Grouping { expression } => write!(f, "Grouping({expression})"),
             Expr::Literal { value } => write!(f, "Literal({value})"),
-            Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})")
+            Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
+            Expr::Var { name } => write!(f, "Var({name})")
         }
     }
 }
@@ -57,6 +61,7 @@ pub trait Visitor<T> {
     fn visit_grouping_expr(&mut self, expr: &Expr) -> T;
     fn visit_literal_expr(&mut self, expr: &Expr) -> T;
     fn visit_unary_expr(&mut self, expr: &Expr) -> T;
+    fn visit_variable_expr(&mut self, expr: &Expr) -> T;
 }
 
 impl Expr {
@@ -66,6 +71,7 @@ impl Expr {
             Expr::Grouping { .. } => visitor.visit_grouping_expr(self),
             Expr::Literal { .. } => visitor.visit_literal_expr(self),
             Expr::Unary { .. } => visitor.visit_unary_expr(self),
+            Expr::Var { .. } => visitor.visit_variable_expr(self)
         }
     }
 }
@@ -105,6 +111,17 @@ impl Visitor<String> for AstPrinter {
         match expr {
             Expr::Unary { operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![right]),
             _ => panic!("Expected a unary expression")
+        }
+    }
+
+    fn visit_variable_expr(&mut self, expr: &Expr) -> String {
+        match expr {
+            Expr::Var { name } => {
+                let mut name_string = String::from("Var");
+                name_string.push_str(name.to_string().as_str());
+                name_string
+            }
+            _ => panic!("Expected a variable expression")
         }
     }
 }

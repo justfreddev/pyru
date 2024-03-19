@@ -10,6 +10,9 @@ mod lexer;
 #[path = "./parser/parser.rs"]
 mod parser;
 
+#[path ="./parser/environment.rs"]
+mod environment;
+
 #[path = "./interpreter/interpreter.rs"]
 mod interpreter;
 
@@ -20,7 +23,7 @@ use crate::parser::Parser;
 
 use interpreter::Interpreter;
 
-fn run(source: String) {
+fn run(interpreter: &mut Interpreter, source: String) {
     let mut lexer = Lexer::new(source);
     let tokens = lexer.scan();
 
@@ -29,15 +32,18 @@ fn run(source: String) {
 
     // println!("{}", AstPrinter.print(&expression));
 
-    let mut interpreter = Interpreter::new();
     interpreter.interpret(statements);
 }
 
 fn main() {
-    let mut source = String::new();
-    print!("> ");
-    std::io::stdout().flush().unwrap();
-    std::io::stdin().read_line(&mut source).unwrap();
+    let mut interpreter = Interpreter::new();
+    loop {
+        let mut source = String::new();
+        print!("> ");
+        std::io::stdout().flush().unwrap();
+        std::io::stdin().read_line(&mut source).unwrap();
+        
+        run(&mut interpreter, source);
+    }
     
-    run(source);
 }

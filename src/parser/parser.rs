@@ -20,7 +20,7 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement());
+            statements.push(self.declaration());
         }
 
         statements
@@ -28,6 +28,24 @@ impl Parser {
 
     fn expression(&mut self) -> Expr {
         self.equality()
+    }
+
+    fn declaration(&mut self) -> Stmt {
+        match self.try_declaration() {
+            Ok(stmt) => stmt,
+            Err(_) => {
+                self.synchronize();
+                self.declaration()
+            }
+        }
+    }
+
+    fn try_declaration(&mut self) -> Result<Stmt, ()> {
+        if self.match_token(vec![&TokenType::Var]) {
+            Ok(self.var_declaration())
+        } else {
+            Ok(self.statement())
+        }
     }
 
     fn statement(&mut self) -> Stmt {
@@ -40,6 +58,20 @@ impl Parser {
         let value = self.expression();
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
         Stmt::Print{ expression: value }
+    }
+
+    fn var_declaration(&mut self) -> Stmt {
+        let name = self.consume(TokenType::Identifier, "Expect variable name.");
+
+        let initializer = if self.match_token(vec![&TokenType::Equal]) {
+            Some(self.expression())
+        } else {
+            None
+        };
+
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration");
+
+        Stmt::Var { name, initializer }
     }
 
     fn expression_statement(&mut self) -> Stmt {
@@ -149,6 +181,11 @@ impl Parser {
             }
         }
 
+        if self.match_token(vec![&TokenType::Identifier]) {
+            let name = self.previous();
+            return Expr::Var { name: name.clone() };
+        }
+
         if self.match_token(vec![&TokenType::LeftParen]) {
             let expr = self.expression();
             self.consume(TokenType::RightParen, "Expect ')' after expression.");
@@ -202,7 +239,7 @@ impl Parser {
         panic!("Parse error.");
     }
 
-    fn _synchronize(&mut self) {
+    fn synchronize(&mut self) {
         self.advance();
 
         while !self.is_at_end() {
