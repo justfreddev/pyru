@@ -228,7 +228,7 @@ impl stmt::Visitor<()> for Interpreter {
         }
     }
 
-    fn visit_var_stmt(&mut self, stmt: &Stmt) -> () {
+    fn visit_var_stmt(&mut self, stmt: &Stmt) {
         match stmt {
             Stmt::Var { name, initializer } => {
                 let mut value = LiteralType::Nil;

@@ -31,20 +31,14 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Stmt {
-        match self.try_declaration() {
-            Ok(stmt) => stmt,
-            Err(_) => {
-                self.synchronize();
-                self.declaration()
-            }
-        }
+        self.try_declaration()
     }
 
-    fn try_declaration(&mut self) -> Result<Stmt, ()> {
+    fn try_declaration(&mut self) -> Stmt {
         if self.match_token(vec![&TokenType::Var]) {
-            Ok(self.var_declaration())
+            self.var_declaration()
         } else {
-            Ok(self.statement())
+            self.statement()
         }
     }
 
@@ -239,7 +233,7 @@ impl Parser {
         panic!("Parse error.");
     }
 
-    fn synchronize(&mut self) {
+    fn _synchronize(&mut self) {
         self.advance();
 
         while !self.is_at_end() {
