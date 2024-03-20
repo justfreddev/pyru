@@ -37,13 +37,18 @@ fn run(interpreter: &mut Interpreter, source: String) {
 
 fn main() {
     let mut interpreter = Interpreter::new();
+    let mut source = String::new();
     loop {
-        let mut source = String::new();
+        let mut temp_source = String::new();
         print!("> ");
         std::io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut source).unwrap();
-        
-        run(&mut interpreter, source);
+        std::io::stdin().read_line(&mut temp_source).unwrap();
+        if temp_source.trim().eq("run") || temp_source.trim().eq("") {
+            run(&mut interpreter, source.clone());
+            source.clear();
+        } else {
+            source.push_str(&temp_source);
+        }
     }
     
 }
