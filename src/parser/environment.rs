@@ -28,4 +28,12 @@ impl Environment {
         }
         panic!("Undefined variable {}.", name.lexeme)
     }
+
+    pub fn assign(&mut self, name: Token, value: &LiteralType) {
+        if self.values.contains_key(&name.lexeme) {
+            self.values.insert(name.lexeme, value.clone());
+            return;
+        }
+        panic!("Undefined variable {}.", name.lexeme)
+    }
 }

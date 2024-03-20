@@ -27,7 +27,7 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expr {
-        self.equality()
+        self.assignment()
     }
 
     fn declaration(&mut self) -> Stmt {
@@ -72,6 +72,21 @@ impl Parser {
         let expr = self.expression();
         self.consume(TokenType::Semicolon, "Expect ';' after expression.");
         Stmt::Expression{ expression: expr }
+    }
+
+    fn assignment(&mut self) -> Expr {
+        let expr = self.equality();
+
+        if self.match_token(vec![&TokenType::Equal]) {
+            let value = self.assignment();
+
+            match expr {
+                Expr::Var { name } => return Expr::Assign { name, value: Box::new(value) },
+                _ => panic!("Invalid assignment target")
+            }
+        }
+
+        expr
     }
 
     fn equality(&mut self) -> Expr {

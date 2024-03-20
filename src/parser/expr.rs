@@ -29,6 +29,10 @@ pub enum Expr {
     },
     Var {
         name: Token
+    },
+    Assign {
+        name: Token,
+        value: Box<Expr>
     }
 }
 
@@ -51,7 +55,8 @@ impl fmt::Display for Expr {
             Expr::Grouping { expression } => write!(f, "Grouping({expression})"),
             Expr::Literal { value } => write!(f, "Literal({value})"),
             Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
-            Expr::Var { name } => write!(f, "Var({name})")
+            Expr::Var { name } => write!(f, "Var({name})"),
+            Expr::Assign { name, value } => write!(f, "Assign({name} = {value}")
         }
     }
 }
@@ -62,6 +67,7 @@ pub trait Visitor<T> {
     fn visit_literal_expr(&mut self, expr: &Expr) -> T;
     fn visit_unary_expr(&mut self, expr: &Expr) -> T;
     fn visit_variable_expr(&mut self, expr: &Expr) -> T;
+    fn visit_assign_expr(&mut self, expr: &Expr) -> T;
 }
 
 impl Expr {
@@ -71,7 +77,8 @@ impl Expr {
             Expr::Grouping { .. } => visitor.visit_grouping_expr(self),
             Expr::Literal { .. } => visitor.visit_literal_expr(self),
             Expr::Unary { .. } => visitor.visit_unary_expr(self),
-            Expr::Var { .. } => visitor.visit_variable_expr(self)
+            Expr::Var { .. } => visitor.visit_variable_expr(self),
+            Expr::Assign{ .. } => visitor.visit_assign_expr(self)
         }
     }
 }
@@ -122,6 +129,15 @@ impl Visitor<String> for AstPrinter {
                 name_string
             }
             _ => panic!("Expected a variable expression")
+        }
+    }
+
+    fn visit_assign_expr(&mut self, expr: &Expr) -> String {
+        match expr {
+            Expr::Assign { name, value } => {
+                format!("{} = {}", name, value)
+            }
+            _ => panic!("Expected an assignment expression")
         }
     }
 }

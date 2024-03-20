@@ -206,6 +206,17 @@ impl expr::Visitor<LiteralType> for Interpreter {
             _ => panic!("Expected a variable expression")
         }
     }
+    
+    fn visit_assign_expr(&mut self, expr: &Expr) -> LiteralType {
+        match expr {
+            Expr::Assign { name, value } => {
+                let assign_value = self.evaluate(value);
+                self.environment.assign(name.clone(), &assign_value);
+                return assign_value;
+            }
+            _ => panic!("Expected an assignment expression")
+        }
+    }
 }
 
 impl stmt::Visitor<()> for Interpreter {
