@@ -11,7 +11,7 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            environment: Environment::new()
+            environment: Environment::new(None)
         }
     }
 
@@ -45,6 +45,18 @@ impl Interpreter {
 
     pub fn execute(&mut self, stmt: &Stmt) {
         stmt.accept(self);
+    }
+
+    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Environment) {
+        let previous = self.environment.clone();
+
+        self.environment = environment;
+
+        for statement in statements {
+            self.execute(&statement);
+        }
+
+        self.environment = previous;
     }
 
     fn unbox<T>(&mut self, value: T) -> T {
@@ -252,6 +264,13 @@ impl stmt::Visitor<()> for Interpreter {
 
             },
             _ => panic!("Expected a var statement")
+        }
+    }
+
+    fn visit_block_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Block { statements } => self.execute_block(statements.clone(), Environment::new(Some(self.environment.clone()))),
+            _ => panic!("Expected a block statement")
         }
     }
 }
