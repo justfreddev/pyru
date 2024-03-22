@@ -1,4 +1,32 @@
+use paste::paste;
+
 use crate::{expr::Expr, tokens::Token};
+
+macro_rules! stmt_visitor {
+    ( $($stmts:literal),+ ; $($idents:ident),+ ) => {
+        pub trait Visitor<T> {
+            $(
+                paste! {
+                    fn [<visit_ $stmts _stmt>](&mut self, stmt: &Stmt) -> T;
+                }
+            )+
+        }
+    
+        impl Stmt {
+            pub fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
+                match self {
+                    $(
+                        Stmt::$idents { .. } => {
+                            paste! {
+                                visitor.[<visit_ $stmts _stmt>](self)
+                            }
+                        },
+                    )+
+                }
+            }
+        }
+    };
+}
 
 #[derive(Clone, Debug)]
 pub enum Stmt {
@@ -17,20 +45,4 @@ pub enum Stmt {
     }
 }
 
-pub trait Visitor<T> {
-    fn visit_expression_stmt(&mut self, stmt: &Stmt) -> T;
-    fn visit_print_stmt(&mut self, stmt: &Stmt) -> T;
-    fn visit_var_stmt(&mut self, stmt: &Stmt) -> T;
-    fn visit_block_stmt(&mut self, stmt: &Stmt) -> T;
-}
-
-impl Stmt {
-    pub fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
-        match self {
-            Stmt::Expression { .. } => visitor.visit_expression_stmt(self),
-            Stmt::Print { .. } => visitor.visit_print_stmt(self),
-            Stmt::Var { .. } => visitor.visit_var_stmt(self),
-            Stmt::Block { .. } => visitor.visit_block_stmt(self)
-        }
-    }
-}
+stmt_visitor!("expression", "print", "var", "block"; Expression, Print, Var, Block);
