@@ -1,6 +1,7 @@
+use paste::paste;
 use std::fmt;
 
-use crate::tokens::Token;
+use crate::{ tokens::Token, expr_visitor };
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LiteralType {
@@ -62,32 +63,12 @@ impl fmt::Display for Expr {
     }
 }
 
-pub trait Visitor<T> {
-    fn visit_binary_expr(&mut self, expr: &Expr) -> T;
-    fn visit_grouping_expr(&mut self, expr: &Expr) -> T;
-    fn visit_literal_expr(&mut self, expr: &Expr) -> T;
-    fn visit_unary_expr(&mut self, expr: &Expr) -> T;
-    fn visit_variable_expr(&mut self, expr: &Expr) -> T;
-    fn visit_assign_expr(&mut self, expr: &Expr) -> T;
-}
-
-impl Expr {
-    pub fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
-        match self {
-            Expr::Binary { .. } => visitor.visit_binary_expr(self),
-            Expr::Grouping { .. } => visitor.visit_grouping_expr(self),
-            Expr::Literal { .. } => visitor.visit_literal_expr(self),
-            Expr::Unary { .. } => visitor.visit_unary_expr(self),
-            Expr::Var { .. } => visitor.visit_variable_expr(self),
-            Expr::Assign{ .. } => visitor.visit_assign_expr(self)
-        }
-    }
-}
+expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign);
 
 pub struct AstPrinter;
 
 
-impl Visitor<String> for AstPrinter {
+impl ExprVisitor<String> for AstPrinter {
     fn visit_binary_expr(&mut self, expr: &Expr) -> String {
         match expr {
             Expr::Binary { left, operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![left, right]),
@@ -122,7 +103,7 @@ impl Visitor<String> for AstPrinter {
         }
     }
 
-    fn visit_variable_expr(&mut self, expr: &Expr) -> String {
+    fn visit_var_expr(&mut self, expr: &Expr) -> String {
         match expr {
             Expr::Var { name } => {
                 let mut name_string = String::from("Var");
@@ -145,7 +126,7 @@ impl Visitor<String> for AstPrinter {
 
 impl AstPrinter {
     pub fn _print(&mut self, expr: &Expr) -> String {
-        expr.accept(self)
+        expr.accept_expr(self)
     }
 
     fn parenthesize(&mut self, name: &str, exprs: Vec<&Expr>) -> String {
@@ -154,7 +135,7 @@ impl AstPrinter {
 
         for expr in exprs {
             string.push(' ');
-            string.push_str(expr.accept(self).as_str());
+            string.push_str(expr.accept_expr(self).as_str());
         }
 
         string.push(')');

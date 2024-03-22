@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{interpreter, tokens::{Token, TokenType}};
+use crate::{
+    keywords,
+    interpreter,
+    tokens::{Token, TokenType}
+};
 
 pub struct Lexer {
     source: String,
@@ -15,22 +19,12 @@ impl Lexer {
     pub fn new(source: String) -> Self {
         // Initialise a hashmap containing all the keywords of the language
         let mut kw: HashMap<String, TokenType> = HashMap::new();
-        kw.insert(String::from("and"), TokenType::And);
-        kw.insert(String::from("class"), TokenType::Class);
-        kw.insert(String::from("else"), TokenType::Else);
-        kw.insert(String::from("false"), TokenType::False);
-        kw.insert(String::from("for"), TokenType::For);
-        kw.insert(String::from("fun"), TokenType::Fun);
-        kw.insert(String::from("if"), TokenType::If);
-        kw.insert(String::from("nil"), TokenType::Nil);
-        kw.insert(String::from("or"), TokenType::Or);
-        kw.insert(String::from("print"), TokenType::Print);
-        kw.insert(String::from("return"), TokenType::Return);
-        kw.insert(String::from("super"), TokenType::Super);
-        kw.insert(String::from("this"), TokenType::This);
-        kw.insert(String::from("true"), TokenType::True);
-        kw.insert(String::from("var"), TokenType::Var);
-        kw.insert(String::from("while"), TokenType::While);
+
+        keywords!(
+            kw ;
+            And, Class, Else, False, For, Fun, If, Nil, Or,
+            Print, Return,Super, This, True, Var, While
+        );
 
         Self {
             source,
@@ -220,18 +214,18 @@ impl Lexer {
                 } else {
                     token = TokenType::Greater;
                 }
-            }
+            },
             ' ' | '\r' | '\t' | '\n' => {
                 return;
-            }
+            },
             '/' => {
                 self.comment();
                 return;
-            }
+            },
             '"' => {
                 self.string();
                 return;
-            }
+            },
             _ => {
                 if self.is_digit(c) {
                     self.number();

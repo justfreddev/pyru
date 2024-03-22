@@ -1,4 +1,6 @@
 use crate::{
+    arithmetic,
+    comparison,
     environment::Environment,
     expr::{self, Expr, LiteralType},
     stmt::{self, Stmt},
@@ -41,11 +43,11 @@ impl Interpreter {
     }
 
     pub fn evaluate(&mut self, expr: &Expr) -> LiteralType {
-        expr.accept(self)
+        expr.accept_expr(self)
     }
 
     pub fn execute(&mut self, stmt: &Stmt) {
-        stmt.accept(self);
+        stmt.accept_stmt(self);
     }
 
     pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Environment) {
@@ -89,7 +91,7 @@ impl Interpreter {
     }
 }
 
-impl expr::Visitor<LiteralType> for Interpreter {
+impl expr::ExprVisitor<LiteralType> for Interpreter {
     fn visit_literal_expr(&mut self, expr: &Expr) -> LiteralType {
         match expr {
             Expr::Literal { value } => value.clone(),
@@ -116,35 +118,19 @@ impl expr::Visitor<LiteralType> for Interpreter {
                 let right = self.evaluate(&right_value);
                 match operator.token_type {
                     TokenType::Greater => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                if ln > rn { return LiteralType::True } return LiteralType::False
-                            }
-                        }
+                        comparison!( > ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::GreaterEqual => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                if ln >= rn { return LiteralType::True } return LiteralType::False
-                            }
-                        }
+                        comparison!( >= ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::Less => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                if ln < rn { return LiteralType::True } return LiteralType::False
-                            }
-                        }
+                        comparison!( < ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::LessEqual => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                if ln <= rn { return LiteralType::True } return LiteralType::False
-                            }
-                        }
+                        comparison!( <= ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::BangEqual => {
@@ -154,19 +140,11 @@ impl expr::Visitor<LiteralType> for Interpreter {
                         if self.is_equal(&left, &right) { return LiteralType::True } return LiteralType::False
                     },
                     TokenType::Minus => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                return LiteralType::Num(ln - rn);
-                            };
-                        };
+                        arithmetic!( - ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::Plus => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                return LiteralType::Num(ln + rn);
-                            }
-                        }
+                        arithmetic!( + ; left ; right );
                         if let LiteralType::Str(ls) = left {
                             if let LiteralType::Str(rs) = right {
                                 return LiteralType::Str(ls + &rs);
@@ -175,19 +153,11 @@ impl expr::Visitor<LiteralType> for Interpreter {
                         return LiteralType::Nil;
                     },
                     TokenType::FSlash => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                return LiteralType::Num(ln / rn);
-                            }
-                        }
+                        arithmetic!( / ; left ; right );
                         panic!("Expected a number")
                     },
                     TokenType::Asterisk => {
-                        if let LiteralType::Num(ln) = left {
-                            if let LiteralType::Num(rn) = right {
-                                return LiteralType::Num(ln * rn);
-                            };
-                        };
+                        arithmetic!( * ; left ; right );
                         panic!("Expected a number")
                     },
                     _ => return LiteralType::Nil,
@@ -213,7 +183,7 @@ impl expr::Visitor<LiteralType> for Interpreter {
         }
     }
 
-    fn visit_variable_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_var_expr(&mut self, expr: &Expr) -> LiteralType {
         match expr {
             Expr::Var { name } => self.environment.get(name.clone()),
             _ => panic!("Expected a variable expression")
@@ -232,7 +202,7 @@ impl expr::Visitor<LiteralType> for Interpreter {
     }
 }
 
-impl stmt::Visitor<()> for Interpreter {
+impl stmt::StmtVisitor<()> for Interpreter {
     fn visit_expression_stmt(&mut self, stmt: &Stmt) {
         match stmt {
             Stmt::Expression { expression } => {

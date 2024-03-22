@@ -19,6 +19,8 @@ mod parser;
 #[path = "./parser/stmt.rs"]
 mod stmt;
 
+mod macros;
+
 use std::io::Write;
 
 use interpreter::Interpreter;

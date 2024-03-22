@@ -1,32 +1,6 @@
 use paste::paste;
 
-use crate::{expr::Expr, tokens::Token};
-
-macro_rules! stmt_visitor {
-    ( $($stmts:literal),+ ; $($idents:ident),+ ) => {
-        pub trait Visitor<T> {
-            $(
-                paste! {
-                    fn [<visit_ $stmts _stmt>](&mut self, stmt: &Stmt) -> T;
-                }
-            )+
-        }
-    
-        impl Stmt {
-            pub fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T {
-                match self {
-                    $(
-                        Stmt::$idents { .. } => {
-                            paste! {
-                                visitor.[<visit_ $stmts _stmt>](self)
-                            }
-                        },
-                    )+
-                }
-            }
-        }
-    };
-}
+use crate::{expr::Expr, stmt_visitor, tokens::Token};
 
 #[derive(Clone, Debug)]
 pub enum Stmt {
@@ -45,4 +19,4 @@ pub enum Stmt {
     }
 }
 
-stmt_visitor!("expression", "print", "var", "block"; Expression, Print, Var, Block);
+stmt_visitor!(Expression, Print, Var, Block);
