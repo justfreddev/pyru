@@ -9,11 +9,11 @@ pub struct Lexer {
     curr: usize,
     line: usize,
     keywords: HashMap<String, TokenType>,
-    had_error: bool,
 }
 
 impl Lexer {
     pub fn new(source: String) -> Self {
+        // Initialise a hashmap containing all the keywords of the language
         let mut kw: HashMap<String, TokenType> = HashMap::new();
         kw.insert(String::from("and"), TokenType::And);
         kw.insert(String::from("class"), TokenType::Class);
@@ -34,12 +34,12 @@ impl Lexer {
 
         Self {
             source,
-            tokens: Vec::new(),
+            tokens: Vec::new(), // Initialise an empty vector for the tokens
+            // Initialise the pointers
             start: 0,
             curr: 0,
             line: 1,
             keywords: kw,
-            had_error: false
         }
     }
 
@@ -61,6 +61,7 @@ impl Lexer {
         self.curr >= self.source.len()
     }
 
+    // Advance to the next token
     fn advance(&mut self) -> char {
         return if let Some(c) = self.source.chars().nth(self.curr) {
             self.curr += 1;
@@ -177,9 +178,10 @@ impl Lexer {
         }
     }
 
+    // Scans the next part of the source code and generates a token from it
     fn scan_token(&mut self) {
-        let c: char = self.advance();
-        let token: TokenType;
+        let c: char = self.advance(); // Gets the next character from the input
+        let token: TokenType; // Initialise the token
         match c {
             '(' => token = TokenType::LeftParen,
             ')' => token = TokenType::RightParen,
@@ -250,19 +252,23 @@ impl Lexer {
         }
     }
 
+    // Scans the raw source code and generates a vector of tokens from it
     pub fn scan(&mut self) -> Vec<Token> {
-        while !self.is_at_end() {
+        while !self.is_at_end() { // Runs until the lexer reaches the end of the inputted code
+            // Set start ptr to the current ptr's value, because the current ptr is at the start of the next token
             self.start = self.curr;
-            self.scan_token();
+            self.scan_token(); // Scans the next token
         };
         
-        self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line, self.start, self.curr));
-        self.tokens.clone()
+        // Once it has reached the end, add the EoF token to the tokens vector
+        self.tokens.push(
+            Token::new(TokenType::Eof, String::new(), String::new(), self.line, self.start, self.curr)
+        );
+        self.tokens.clone() // Return the tokens vector with all the generated token
     }
 
     fn error(&mut self, line: usize, message: &str) {
         self.report(line, "", message);
-        self.had_error = true;
     }
     
     fn report(&mut self, line: usize, where_about: &str, message: &str) {
