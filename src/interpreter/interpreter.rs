@@ -1,8 +1,9 @@
-use interpreter_v1::tokens::{Token, TokenType};
-
-use crate::environment::Environment;
-use crate::expr::{self, Expr, LiteralType};
-use crate::stmt::{self, Stmt};
+use crate::{
+    environment::Environment,
+    expr::{self, Expr, LiteralType},
+    stmt::{self, Stmt},
+    tokens::{Token, TokenType}
+};
 
 pub struct Interpreter {
     environment: Environment

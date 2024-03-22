@@ -1,5 +1,6 @@
 use std::fmt;
-use interpreter_v1::tokens::Token;
+
+use crate::tokens::Token;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LiteralType {

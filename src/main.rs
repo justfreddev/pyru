@@ -1,27 +1,29 @@
-#[path = "./parser/expr.rs"]
-mod expr;
-
-#[path = "./parser/stmt.rs"]
-mod stmt;
+#[path = "./interpreter/interpreter.rs"]
+mod interpreter;
 
 #[path = "./lexer/lexer.rs"]
 mod lexer;
 
-#[path = "./parser/parser.rs"]
-mod parser;
+#[path = "./lexer/tokens.rs"]
+mod tokens;
 
 #[path ="./parser/environment.rs"]
 mod environment;
 
-#[path = "./interpreter/interpreter.rs"]
-mod interpreter;
+#[path = "./parser/expr.rs"]
+mod expr;
+
+#[path = "./parser/parser.rs"]
+mod parser;
+
+#[path = "./parser/stmt.rs"]
+mod stmt;
 
 use std::io::Write;
-use crate::lexer::Lexer;
-use crate::parser::Parser;
-// use crate::expr::AstPrinter;
 
 use interpreter::Interpreter;
+use lexer::Lexer;
+use parser::Parser;
 
 fn run(interpreter: &mut Interpreter, source: String) {
     let mut lexer = Lexer::new(source);
@@ -30,7 +32,7 @@ fn run(interpreter: &mut Interpreter, source: String) {
     let mut parser = Parser::new(tokens);
     let statements = parser.parse();
 
-    // println!("{}", AstPrinter.print(&expression));
+    println!("{:#?}", statements);
 
     interpreter.interpret(statements);
 }

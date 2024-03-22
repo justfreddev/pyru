@@ -1,6 +1,6 @@
-use interpreter_v1::tokens::{Token, TokenType};
 use std::collections::HashMap;
-use crate::interpreter;
+
+use crate::{interpreter, tokens::{Token, TokenType}};
 
 pub struct Lexer {
     source: String,
@@ -86,12 +86,12 @@ impl Lexer {
 
     fn add_token(&mut self, token_type: TokenType) {
         let text = String::from(&self.source[self.start..self.curr]);
-        self.tokens.push(Token::new(token_type, text, String::new(), self.line));
+        self.tokens.push(Token::new(token_type, text, String::new(), self.line, self.start, self.curr));
     }
 
     fn add_string_token(&mut self, token_type: TokenType, literal: String) {
         let text = String::from(&self.source[self.start..self.curr]);
-        self.tokens.push(Token::new(token_type, text, literal, self.line));
+        self.tokens.push(Token::new(token_type, text, literal, self.line, self.start, self.curr));
     }
     
     fn is_digit(&mut self, c: char) -> bool {
@@ -164,7 +164,9 @@ impl Lexer {
                             TokenType::Comment,
                             String::from(self.source[self.start + 2..self.curr].trim()),
                             String::from(self.source[self.start..self.curr].trim()),
-                            self.line
+                            self.line,
+                            self.start,
+                            self.curr
                         )
                     );
                     return;
@@ -254,7 +256,7 @@ impl Lexer {
             self.scan_token();
         };
         
-        self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line));
+        self.tokens.push(Token::new(TokenType::Eof, String::new(), String::new(), self.line, self.start, self.curr));
         self.tokens.clone()
     }
 

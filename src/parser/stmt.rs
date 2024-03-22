@@ -1,7 +1,6 @@
-use interpreter_v1::tokens::Token;
-use crate::expr::Expr;
+use crate::{expr::Expr, tokens::Token};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Stmt {
     Expression {
         expression: Expr

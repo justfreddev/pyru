@@ -1,8 +1,6 @@
-use interpreter_v1::tokens::Token;
-
-use crate::expr::LiteralType;
-
 use std::collections::HashMap;
+
+use crate::{expr::LiteralType, tokens::Token};
 
 #[derive(Clone)]
 pub struct Environment {

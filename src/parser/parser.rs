@@ -1,8 +1,9 @@
-use interpreter_v1::tokens::{Token, TokenType};
-
-use crate::interpreter;
-use crate::expr::{Expr, LiteralType};
-use crate::stmt::Stmt;
+use crate::{
+    expr::{Expr, LiteralType},
+    interpreter::Interpreter,
+    stmt::Stmt,
+    tokens::{Token, TokenType}
+};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -215,7 +216,7 @@ impl Parser {
 
         println!("{}", self.peek().clone());
 
-        interpreter::Interpreter::token_error(self.peek(), "Expected expression.");
+        Interpreter::token_error(self.peek(), "Expected expression.");
         Expr::Literal{ value: LiteralType::Nil }
     }
 
@@ -256,7 +257,7 @@ impl Parser {
             return self.advance().clone();
         };
 
-        interpreter::Interpreter::token_error(self.peek(), message);
+        Interpreter::token_error(self.peek(), message);
         panic!("Parse error.");
     }
 
