@@ -30,14 +30,14 @@ pub struct Token {
 
 impl Token {
     #[must_use]
-    pub fn new(token_type: TokenType, lexeme: String, literal: String, line: usize, _start: usize, _end: usize) -> Self {
+    pub fn new(token_type: TokenType, lexeme: String, literal: String, line: usize, start: usize, end: usize) -> Self {
         Self {
             token_type,
             lexeme,
             literal,
             line,
-            _start,
-            _end
+            _start: start,
+            _end: end
         } 
     }
 }

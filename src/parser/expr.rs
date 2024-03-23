@@ -27,7 +27,7 @@ pub enum Expr {
     },
     Unary {
         operator: Token,
-        right: Box<Expr>
+        right: Box<Expr>,
     },
     Var {
         name: Token
@@ -35,9 +35,15 @@ pub enum Expr {
     Assign {
         name: Token,
         value: Box<Expr>
+    },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>
     }
 }
 
+// Displays types in the format: <type>(<value>)
 impl fmt::Display for LiteralType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -50,6 +56,7 @@ impl fmt::Display for LiteralType {
     }
 }
 
+// Displays expressions in the format: <type>(<attributes,>)
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -58,12 +65,14 @@ impl fmt::Display for Expr {
             Expr::Literal { value } => write!(f, "Literal({value})"),
             Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
             Expr::Var { name } => write!(f, "Var({name})"),
-            Expr::Assign { name, value } => write!(f, "Assign({name} = {value}")
+            Expr::Assign { name, value } => write!(f, "Assign({name} = {value}"),
+            Expr::Logical { left, operator, right } => write!(f, "Logical({left} {operator} {right})")
         }
     }
 }
 
-expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign);
+// Use the expr_visitor! macro to generate the visitor design pattern for expressions
+expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical);
 
 pub struct AstPrinter;
 
@@ -117,9 +126,16 @@ impl ExprVisitor<String> for AstPrinter {
     fn visit_assign_expr(&mut self, expr: &Expr) -> String {
         match expr {
             Expr::Assign { name, value } => {
-                format!("{} = {}", name, value)
+                format!("{name} = {value}")
             }
             _ => panic!("Expected an assignment expression")
+        }
+    }
+    
+    fn visit_logical_expr(&mut self, expr: &Expr) -> String {
+        match expr {
+            Expr::Logical { left, operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![left, right]),
+            _ => panic!("Expected a logical expression")
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::{ rc::Rc, cell::RefCell };
+
 use crate::{
     arithmetic,
     comparison,
@@ -170,11 +172,11 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
     fn visit_unary_expr(&mut self, expr: &Expr) -> LiteralType {
         match expr {
             Expr::Unary { operator, right } => {
-                let right_value = self.unbox(right.clone());
+                let right_value = self.unbox(*right.clone());
                 let right = self.evaluate(&right_value);
                 match operator.token_type {
                     TokenType::Bang => if self.is_truthy(&right) { LiteralType::False } else { LiteralType::True },
-                    TokenType::Minus => right,
+                    TokenType::Minus => if let LiteralType::Num(n) = right { return LiteralType::Num(-n) } else { panic!("Couldn't negate number??") },
                     _ => panic!("Expected a minus"),
                 };
                 return LiteralType::Nil
@@ -194,10 +196,27 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
         match expr {
             Expr::Assign { name, value } => {
                 let assign_value = self.evaluate(value);
-                self.environment.assign(name.clone(), &assign_value);
-                return assign_value;
+                self.environment.assign(name.clone(), assign_value.clone());
+                assign_value
             }
             _ => panic!("Expected an assignment expression")
+        }
+    }
+    
+    fn visit_logical_expr(&mut self, expr: &Expr) -> LiteralType {
+        match expr {
+            Expr::Logical { left, operator, right } => {
+                let left = self.evaluate(left);
+                if operator.token_type == TokenType::Or {
+                    if self.is_truthy(&left) {
+                        return left
+                    } else {
+                        if !self.is_truthy(&left) { return left };
+                    }
+                }
+                self.evaluate(right)
+            }
+            _ => panic!("Expected a logical expression")
         }
     }
 }
@@ -240,8 +259,40 @@ impl stmt::StmtVisitor<()> for Interpreter {
 
     fn visit_block_stmt(&mut self, stmt: &Stmt) {
         match stmt {
-            Stmt::Block { statements } => self.execute_block(statements.clone(), Environment::new(Some(self.environment.clone()))),
+            Stmt::Block { statements } => self.execute_block(statements.clone(), Environment::new(Some(Rc::new(RefCell::new(self.environment.clone()))))),
             _ => panic!("Expected a block statement")
+        }
+    }
+    
+    fn visit_if_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::If { condition, then_branch, else_branch } => {
+                let condition_evaluation = &self.evaluate(condition);
+                let else_branch_copy = else_branch.clone();
+                if self.is_truthy(condition_evaluation) {
+                    self.execute(&then_branch);
+                } else if else_branch.is_some() {
+                    self.execute(&else_branch_copy.unwrap());
+                }
+            }
+            _ => panic!("Expected an if statement")
+        }
+        
+    }
+    
+    fn visit_while_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::While { condition, body } => {
+                let body = *body.clone();
+                let mut condition_evaluation = self.evaluate(condition);
+                let mut condition_result = self.is_truthy(&condition_evaluation);
+                while condition_result {
+                    self.execute(&body);
+                    condition_evaluation = self.evaluate(condition);
+                    condition_result = self.is_truthy(&condition_evaluation);
+                }
+            }
+            _ => panic!("Expected a while statement")
         }
     }
 }

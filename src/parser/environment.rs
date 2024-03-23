@@ -1,48 +1,46 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    rc::Rc,
+    cell::RefCell
+};
 
 use crate::{expr::LiteralType, tokens::Token};
 
 #[derive(Clone)]
 pub struct Environment {
-    values: HashMap<String, LiteralType>,
-    enclosing: Option<Box<Environment>>
+    values: HashMap<String, Rc<RefCell<LiteralType>>>,
+    enclosing: Option<Rc<RefCell<Environment>>>
 }
 
 impl Environment {
-    pub fn new(enclosing: Option<Environment>) -> Self {
-        match enclosing {
-            Some(environment) => Self { values: HashMap::new(), enclosing: Some(Box::new(environment)) },
-            None => Self { values: HashMap::new(), enclosing: None }
-        }
+    pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
+        Self { values: HashMap::new(), enclosing }
     }
 
     pub fn define(&mut self, name: String, value: LiteralType) {
-        self.values.insert(name, value);
+        self.values.insert(name, Rc::new(RefCell::new(value)));
     }
 
     pub fn get(&self, name: Token) -> LiteralType {
-        if self.values.contains_key(&name.lexeme) {
-            match self.values.get(&name.lexeme) {
-                Some(v) => return v.clone(),
-                _ => panic!("Undefined variable {}.", name.lexeme),
-            }
-        }
-
-        if let Some(enclosing) = &self.enclosing {
-            return enclosing.get(name);
+        match self.values.get(&name.lexeme) {
+            Some(v) => return v.borrow().clone(),
+            _ => {
+                if let Some(enclosing) = &self.enclosing {
+                    return enclosing.borrow().get(name);
+                }
+            },
         }
 
         panic!("Undefined variable {}.", name.lexeme)
     }
 
-    pub fn assign(&mut self, name: Token, value: &LiteralType) {
-        if self.values.contains_key(&name.lexeme) {
-            self.values.insert(name.lexeme, value.clone());
+    pub fn assign(&mut self, name: Token, value: LiteralType) {
+        if let Some(x) = self.values.get_mut(&name.lexeme) {
+            let mut y = x.borrow_mut();
+            *y = value;
             return;
-        }
-
-        if let Some(enclosing) = &mut self.enclosing {
-            enclosing.assign(name, value);
+        } else if let Some(enclosing) = &self.enclosing {
+            enclosing.borrow_mut().assign(name, value);
             return;
         }
 

@@ -35,8 +35,6 @@ fn run(source: String) {
     let mut parser = Parser::new(tokens); // Initialises parser with the vector of tokens
     let statements = parser.parse(); // Parser generates a vector of statements from the tokens
 
-    // println!("{:#?}", statements);
-
     let mut interpreter = Interpreter::new(); // Initalises interpreter
     interpreter.interpret(statements); // Interpret the vector of statements and generate an output
 }
@@ -51,9 +49,9 @@ fn repl() -> String {
         std::io::stdin().read_line(&mut temp_source).unwrap();
         if temp_source.trim().eq("run") || temp_source.trim().eq("") {
             return source;
-        } else {
-            source.push_str(&temp_source);
         }
+        temp_source.push('\n');
+        source.push_str(&temp_source);
     }
 }
 
