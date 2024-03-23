@@ -1,7 +1,7 @@
 use paste::paste;
 use std::fmt;
 
-use crate::{ tokens::Token, expr_visitor };
+use crate::{ tokens::{ Token, TokenType }, expr_visitor };
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LiteralType {
@@ -40,6 +40,10 @@ pub enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>
+    },
+    Alteration {
+        name: Token,
+        alteration_type: TokenType
     }
 }
 
@@ -66,13 +70,14 @@ impl fmt::Display for Expr {
             Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
             Expr::Var { name } => write!(f, "Var({name})"),
             Expr::Assign { name, value } => write!(f, "Assign({name} = {value}"),
-            Expr::Logical { left, operator, right } => write!(f, "Logical({left} {operator} {right})")
+            Expr::Logical { left, operator, right } => write!(f, "Logical({left} {operator} {right})"),
+            Expr::Alteration { name, alteration_type } => write!(f, "Alteration({name} {alteration_type})")
         }
     }
 }
 
 // Use the expr_visitor! macro to generate the visitor design pattern for expressions
-expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical);
+expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical, Alteration);
 
 pub struct AstPrinter;
 
@@ -125,9 +130,7 @@ impl ExprVisitor<String> for AstPrinter {
 
     fn visit_assign_expr(&mut self, expr: &Expr) -> String {
         match expr {
-            Expr::Assign { name, value } => {
-                format!("{name} = {value}")
-            }
+            Expr::Assign { name, value } => format!("{name} = {value}"),
             _ => panic!("Expected an assignment expression")
         }
     }
@@ -136,6 +139,13 @@ impl ExprVisitor<String> for AstPrinter {
         match expr {
             Expr::Logical { left, operator, right } => self.parenthesize(operator.lexeme.as_str(), vec![left, right]),
             _ => panic!("Expected a logical expression")
+        }
+    }
+    
+    fn visit_alteration_expr(&mut self, expr: &Expr) -> String {
+        match expr {
+            Expr::Alteration { name, alteration_type } => format!("{name}{alteration_type}"),
+            _ => panic!("Expected an alteration expression")
         }
     }
 }

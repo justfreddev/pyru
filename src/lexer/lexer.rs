@@ -183,10 +183,22 @@ impl Lexer {
             '}' => token = TokenType::RightBrace,
             ',' => token = TokenType::Comma,
             '.' => token = TokenType::Dot,
-            '-' => token = TokenType::Minus,
-            '+' => token = TokenType::Plus,
             ';' => token = TokenType::Semicolon,
             '*' => token = TokenType::Asterisk,
+            '-' => {
+                if self.match_token('-') {
+                    token = TokenType::Decr;
+                } else {
+                    token = TokenType::Minus;
+                }
+            },
+            '+' => {
+                if self.match_token('+') {
+                    token = TokenType::Incr;
+                } else {
+                    token = TokenType::Plus;
+                }
+            },
             '!' => {
                 if self.match_token('=') {
                     token = TokenType::BangEqual;

@@ -1,3 +1,4 @@
+use core::panic;
 use std::{ rc::Rc, cell::RefCell };
 
 use crate::{
@@ -217,6 +218,32 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
                 self.evaluate(right)
             }
             _ => panic!("Expected a logical expression")
+        }
+    }
+    
+    fn visit_alteration_expr(&mut self, expr: &Expr) -> LiteralType {
+        match expr {
+            Expr::Alteration { name, alteration_type } => {
+                let curr_value = self.environment.get(name.clone());
+                match alteration_type {
+                    TokenType::Incr => {
+                        if let LiteralType::Num(n) = curr_value {
+                            self.environment.assign(name.clone(), LiteralType::Num(n + 1.0));
+                            return LiteralType::Num(n + 1.0);
+                        }
+                        panic!("Why is the current value not a number?? 1")
+                    },
+                    TokenType::Decr => {
+                        if let LiteralType::Num(n) = curr_value {
+                            self.environment.assign(name.clone(), LiteralType::Num(n - 1.0));
+                            return LiteralType::Num(n - 1.0);
+                        }
+                        panic!("Why is the current value not a number?? 2")
+                    },
+                    _ => panic!("Why is it not an increment or decrement token?")
+                }
+            },
+            _ => panic!("Expected an alteration expression")
         }
     }
 }

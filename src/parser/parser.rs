@@ -159,6 +159,19 @@ impl Parser {
     fn assignment(&mut self) -> Expr {
         let expr = self.or();
 
+        if self.match_token(vec![&TokenType::Incr, &TokenType::Decr]) {
+            match expr {
+                Expr::Var { name } => {
+                    match self.previous().token_type {
+                        TokenType::Incr => return Expr::Alteration { name, alteration_type: TokenType::Incr },
+                        TokenType::Decr => return Expr::Alteration { name, alteration_type: TokenType::Decr },
+                        _ => panic!("Expected an alteration expression")
+                    }
+                },
+                _ => panic!("Invalid alteration target")
+            }
+        }
+
         if self.match_token(vec![&TokenType::Equal]) {
             let value = self.assignment();
 
