@@ -44,6 +44,7 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Stmt {
+        if self.match_token(vec![&TokenType::For]) { return self.for_statement() };
         if self.match_token(vec![&TokenType::If]) { return self.if_statement() };
         if self.match_token(vec![&TokenType::Print]) { return self.print_statement() };
         if self.match_token(vec![&TokenType::While]) { return self.while_statement() };
@@ -92,6 +93,50 @@ impl Parser {
         let body = self.statement();
 
         Stmt::While { condition, body: Box::new(body) }
+    }
+
+    fn for_statement(&mut self) -> Stmt {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.");
+
+        let initializer;
+        if self.match_token(vec![&TokenType::Semicolon]) {
+            initializer = None;
+        } else if self.match_token(vec![&TokenType::Var]) {
+            initializer = Some(self.var_declaration());
+        } else {
+            initializer = Some(self.expression_statement());
+        }
+
+        let mut condition = None;
+        if !self.check(TokenType::Semicolon) {
+            condition = Some(self.expression());
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after loop condition.");
+
+        let mut increment = None;
+        if !self.check(TokenType::RightParen) {
+            increment = Some(self.expression());
+        }
+
+        self.consume(TokenType::RightParen, "Expect ')' after for clauses.");
+
+        let mut body = self.statement();
+
+        if let Some(incr) = increment {
+            body = Stmt::Block { statements: vec![body, Stmt::Expression { expression: incr }] }
+        }
+
+        if condition.is_none() {
+            condition = Some(Expr::Literal { value: LiteralType::True });
+        }
+        body = Stmt::While { condition: condition.unwrap(), body: Box::new(body) };
+
+        if let Some(init) = initializer {
+            body = Stmt::Block { statements: vec![init, body] };
+        }
+
+        body
     }
 
     fn expression_statement(&mut self) -> Stmt {

@@ -51,7 +51,7 @@ impl fmt::Display for Stmt {
                 }
                 
             },
-            Stmt::While { condition, body } => write!(f, "While({condition} {body})")
+            Stmt::While { condition, body } => write!(f, "While({condition} {body})"),
         }
     }
 }
