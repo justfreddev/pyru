@@ -1,14 +1,15 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
-    rc::Rc,
-    cell::RefCell
+    fmt,
+    rc::Rc
 };
 
-use crate::{expr::LiteralType, tokens::Token};
+use crate::{ expr::Value, tokens::Token };
 
 #[derive(Clone)]
 pub struct Environment {
-    values: HashMap<String, Rc<RefCell<LiteralType>>>,
+    values: HashMap<String, Rc<RefCell<Value>>>,
     enclosing: Option<Rc<RefCell<Environment>>>
 }
 
@@ -17,11 +18,11 @@ impl Environment {
         Self { values: HashMap::new(), enclosing }
     }
 
-    pub fn define(&mut self, name: String, value: LiteralType) {
+    pub fn define(&mut self, name: String, value: Value) {
         self.values.insert(name, Rc::new(RefCell::new(value)));
     }
 
-    pub fn get(&self, name: Token) -> LiteralType {
+    pub fn get(&self, name: Token) -> Value {
         match self.values.get(&name.lexeme) {
             Some(v) => return v.borrow().clone(),
             _ => {
@@ -31,10 +32,11 @@ impl Environment {
             },
         }
 
+        println!("{:#?}", self.values);
         panic!("Undefined variable {}.", name.lexeme)
     }
 
-    pub fn assign(&mut self, name: Token, value: LiteralType) {
+    pub fn assign(&mut self, name: Token, value: Value) {
         if let Some(x) = self.values.get_mut(&name.lexeme) {
             let mut y = x.borrow_mut();
             *y = value;
@@ -45,5 +47,11 @@ impl Environment {
         }
 
         panic!("Undefined variable {}.", name.lexeme)
+    }
+}
+
+impl fmt::Display for Environment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Environment(values: {:#?}, enclosing: {})", self.values, self.enclosing.is_some())
     }
 }

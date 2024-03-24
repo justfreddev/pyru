@@ -1,7 +1,11 @@
 use paste::paste;
-use std::fmt;
+use std::{fmt, vec};
 
-use crate::{ tokens::{ Token, TokenType }, expr_visitor };
+use crate::{
+    expr_visitor,
+    stmt::{Function, NativeFunction},
+    tokens::{ Token, TokenType }
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LiteralType {
@@ -12,7 +16,14 @@ pub enum LiteralType {
     Nil
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
+pub enum Value {
+    Literal(LiteralType),
+    Func(Function),
+    NativeFunc(NativeFunction),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -44,6 +55,11 @@ pub enum Expr {
     Alteration {
         name: Token,
         alteration_type: TokenType
+    },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Expr>
     }
 }
 
@@ -55,7 +71,7 @@ impl fmt::Display for LiteralType {
             LiteralType::Num(n) => write!(f, "Num({n})"),
             LiteralType::True => write!(f, "True"),
             LiteralType::False => write!(f, "False"),
-            LiteralType::Nil => write!(f, "Nil"),
+            LiteralType::Nil => write!(f, "Nil")
         }
     }
 }
@@ -71,13 +87,14 @@ impl fmt::Display for Expr {
             Expr::Var { name } => write!(f, "Var({name})"),
             Expr::Assign { name, value } => write!(f, "Assign({name} = {value}"),
             Expr::Logical { left, operator, right } => write!(f, "Logical({left} {operator} {right})"),
-            Expr::Alteration { name, alteration_type } => write!(f, "Alteration({name} {alteration_type})")
+            Expr::Alteration { name, alteration_type } => write!(f, "Alteration({name} {alteration_type})"),
+            Expr::Call { callee, paren, arguments: arguements } => write!(f, "Call({callee} {paren} {arguements:?})")
         }
     }
 }
 
 // Use the expr_visitor! macro to generate the visitor design pattern for expressions
-expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical, Alteration);
+expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical, Alteration, Call);
 
 pub struct AstPrinter;
 
@@ -146,6 +163,13 @@ impl ExprVisitor<String> for AstPrinter {
         match expr {
             Expr::Alteration { name, alteration_type } => format!("{name}{alteration_type}"),
             _ => panic!("Expected an alteration expression")
+        }
+    }
+
+    fn visit_call_expr(&mut self, expr: &Expr) -> String {
+        match expr {
+            Expr::Call { callee, paren: _paren, arguments: arguements } => format!("{callee}({arguements:?})"),
+            _ => panic!("Expected a call expression")
         }
     }
 }

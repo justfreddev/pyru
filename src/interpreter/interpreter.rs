@@ -1,23 +1,43 @@
-use core::panic;
-use std::{ rc::Rc, cell::RefCell };
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    time::{SystemTime, UNIX_EPOCH}
+};
 
 use crate::{
     arithmetic,
     comparison,
     environment::Environment,
-    expr::{self, Expr, LiteralType},
-    stmt::{self, Stmt},
+    expr::{self, Expr, LiteralType, Value},
+    stmt::{self, Callable, Function, NativeFunction, Stmt},
     tokens::{Token, TokenType}
 };
 
 pub struct Interpreter {
+    pub globals: Environment,
     environment: Environment
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let mut globals = Environment::new(None);
+
+
+        let clock = NativeFunction::new(
+            "clock".to_string(),
+            0,
+            |_, _| {
+                Value::Literal(LiteralType::Num(
+                    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64()
+                ))
+            }
+        );
+
+        globals.define("clock".to_string(), Value::NativeFunc(clock));
+
         Self {
-            environment: Environment::new(None)
+            globals: globals.clone(),
+            environment: globals
         }
     }
 
@@ -38,14 +58,12 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) {
-
         for stmt in statements {
             self.execute(&stmt);
         }
-
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> LiteralType {
+    pub fn evaluate(&mut self, expr: &Expr) -> Value {
         expr.accept_expr(self)
     }
 
@@ -69,11 +87,15 @@ impl Interpreter {
         value
     }
 
-    fn is_truthy(&mut self, object: &LiteralType) -> bool {
-        !matches!(object, LiteralType::Nil | LiteralType::False)
+    fn is_truthy(&mut self, object: &Value) -> bool {
+        match object {
+            Value::Literal(literal) => !matches!(literal, LiteralType::Nil | LiteralType::False),
+            _ => panic!("Expected a literal value")
+        }
+        
     }
 
-    fn is_equal(&mut self, a: &LiteralType, b: &LiteralType) -> bool {
+    fn is_equal(&mut self, a: &Value, b: &Value) -> bool {
         *a == *b
     }
 
@@ -89,20 +111,20 @@ impl Interpreter {
             LiteralType::Str(s) => s,
             LiteralType::True => "true".to_string(),
             LiteralType::False => "false".to_string(),
-            LiteralType::Nil => "nil".to_string(),
+            LiteralType::Nil => "nil".to_string()
         }
     }
 }
 
-impl expr::ExprVisitor<LiteralType> for Interpreter {
-    fn visit_literal_expr(&mut self, expr: &Expr) -> LiteralType {
+impl expr::ExprVisitor<Value> for Interpreter {
+    fn visit_literal_expr(&mut self, expr: &Expr) -> Value {
         match expr {
-            Expr::Literal { value } => value.clone(),
+            Expr::Literal { value } => Value::Literal(value.clone()),
             _ => panic!("Expected a literal value")
         }
     }
 
-    fn visit_grouping_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_grouping_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Grouping { expression } => {
                 let expression_value = self.unbox(expression.clone());
@@ -112,7 +134,7 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
         }
     }
 
-    fn visit_binary_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_binary_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Binary { left, operator, right } => {
                 let left_value = self.unbox(left.clone());
@@ -137,10 +159,10 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
                         panic!("Expected a number")
                     },
                     TokenType::BangEqual => {
-                        if !self.is_equal(&left, &right) { return LiteralType::True } return LiteralType::False
+                        if !self.is_equal(&left, &right) { return Value::Literal(LiteralType::True) } return Value::Literal(LiteralType::False)
                     },
                     TokenType::EqualEqual => {
-                        if self.is_equal(&left, &right) { return LiteralType::True } return LiteralType::False
+                        if self.is_equal(&left, &right) { return Value::Literal(LiteralType::True) } return Value::Literal(LiteralType::False)
                     },
                     TokenType::Minus => {
                         arithmetic!( - ; left ; right );
@@ -148,12 +170,12 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
                     },
                     TokenType::Plus => {
                         arithmetic!( + ; left ; right );
-                        if let LiteralType::Str(ls) = left {
-                            if let LiteralType::Str(rs) = right {
-                                return LiteralType::Str(ls + &rs);
+                        if let Value::Literal(LiteralType::Str(ls)) = left {
+                            if let Value::Literal(LiteralType::Str(rs)) = right {
+                                return Value::Literal(LiteralType::Str(ls + &rs));
                             }
                         }
-                        return LiteralType::Nil;
+                        return Value::Literal(LiteralType::Nil);
                     },
                     TokenType::FSlash => {
                         arithmetic!( / ; left ; right );
@@ -163,37 +185,55 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
                         arithmetic!( * ; left ; right );
                         panic!("Expected a number")
                     },
-                    _ => return LiteralType::Nil,
+                    _ => return Value::Literal(LiteralType::Nil),
                 };
             }
             _ => panic!("Expected a binary expression")
         }
     }
 
-    fn visit_unary_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_unary_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Unary { operator, right } => {
                 let right_value = self.unbox(*right.clone());
                 let right = self.evaluate(&right_value);
                 match operator.token_type {
-                    TokenType::Bang => if self.is_truthy(&right) { LiteralType::False } else { LiteralType::True },
-                    TokenType::Minus => if let LiteralType::Num(n) = right { return LiteralType::Num(-n) } else { panic!("Couldn't negate number??") },
+                    TokenType::Bang => {
+                            if self.is_truthy(&right) {
+                                Value::Literal(LiteralType::False)
+                            } else {
+                                Value::Literal(LiteralType::True)
+                            }
+                        }
+                    TokenType::Minus => {
+                        if let Value::Literal(LiteralType::Num(n)) = right {
+                            return Value::Literal(LiteralType::Num(-n))
+                        } else {
+                            panic!("Couldn't negate number??")
+                        }
+                    },
                     _ => panic!("Expected a minus"),
                 };
-                return LiteralType::Nil
+                return Value::Literal(LiteralType::Nil)
             },
             _ => panic!("Expected a unary expression")
         }
     }
 
-    fn visit_var_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_var_expr(&mut self, expr: &Expr) -> Value {
         match expr {
-            Expr::Var { name } => self.environment.get(name.clone()),
+            Expr::Var { name } => {
+                match self.environment.get(name.clone()) {
+                    Value::Literal(l) => Value::Literal(l),
+                    Value::Func(f) => Value::Func(f),
+                    Value::NativeFunc(nf) => Value::NativeFunc(nf),
+                }
+            },
             _ => panic!("Expected a variable expression")
         }
     }
     
-    fn visit_assign_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_assign_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Assign { name, value } => {
                 let assign_value = self.evaluate(value);
@@ -204,7 +244,7 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
         }
     }
     
-    fn visit_logical_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_logical_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Logical { left, operator, right } => {
                 let left = self.evaluate(left);
@@ -221,22 +261,22 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
         }
     }
     
-    fn visit_alteration_expr(&mut self, expr: &Expr) -> LiteralType {
+    fn visit_alteration_expr(&mut self, expr: &Expr) -> Value {
         match expr {
             Expr::Alteration { name, alteration_type } => {
                 let curr_value = self.environment.get(name.clone());
                 match alteration_type {
                     TokenType::Incr => {
-                        if let LiteralType::Num(n) = curr_value {
-                            self.environment.assign(name.clone(), LiteralType::Num(n + 1.0));
-                            return LiteralType::Num(n + 1.0);
+                        if let Value::Literal(LiteralType::Num(n)) = curr_value {
+                            self.environment.assign(name.clone(), Value::Literal(LiteralType::Num(n + 1.0)));
+                            return Value::Literal(LiteralType::Num(n + 1.0));
                         }
                         panic!("Why is the current value not a number?? 1")
                     },
                     TokenType::Decr => {
-                        if let LiteralType::Num(n) = curr_value {
-                            self.environment.assign(name.clone(), LiteralType::Num(n - 1.0));
-                            return LiteralType::Num(n - 1.0);
+                        if let Value::Literal(LiteralType::Num(n)) = curr_value {
+                            self.environment.assign(name.clone(), Value::Literal(LiteralType::Num(n - 1.0)));
+                            return Value::Literal(LiteralType::Num(n - 1.0));
                         }
                         panic!("Why is the current value not a number?? 2")
                     },
@@ -244,6 +284,32 @@ impl expr::ExprVisitor<LiteralType> for Interpreter {
                 }
             },
             _ => panic!("Expected an alteration expression")
+        }
+    }
+    
+    fn visit_call_expr(&mut self, expr: &Expr) -> Value {
+        match expr {
+            Expr::Call { callee, paren: _paren, arguments: arguements } => {
+                let callee = self.evaluate(callee);
+                
+                let mut args: Vec<Value> = Vec::new();
+                for argument in arguements {
+                    args.push(self.evaluate(argument));
+                }
+
+                match callee {
+                    Value::Func(f) => {
+                        if args.len() != f.arity() { panic!("Expected {} arguments but got {}.", args.len(), f.arity()) }
+                        return f.call(self, args);
+                    },
+                    Value::NativeFunc(nf) => {
+                        if args.len() != nf.arity() { panic!("Expected {} arguments but got {}.", args.len(), nf.arity()) }
+                        return nf.call(self, args)
+                    },
+                    _ => panic!("Can only call functions and classes"),
+                }
+            },
+            _ => panic!("Expected a call expression")
         }
     }
 }
@@ -262,7 +328,11 @@ impl stmt::StmtVisitor<()> for Interpreter {
         match stmt {
             Stmt::Print { expression } => {
                 let value = self.evaluate(&expression.clone());
-                println!("{}", self.stringify(value));
+                match value {
+                    Value::Literal(literal) => println!("{}", self.stringify(literal)),
+                    _ => panic!("Expected a literal value")
+                }
+                
             },
             _ => panic!("Exepcted a print statement")
         }
@@ -271,7 +341,7 @@ impl stmt::StmtVisitor<()> for Interpreter {
     fn visit_var_stmt(&mut self, stmt: &Stmt) {
         match stmt {
             Stmt::Var { name, initializer } => {
-                let mut value = LiteralType::Nil;
+                let mut value = Value::Literal(LiteralType::Nil);
 
                 if let Some(initializer_expr) = initializer {
                     value = self.evaluate(initializer_expr);
@@ -320,6 +390,16 @@ impl stmt::StmtVisitor<()> for Interpreter {
                 }
             }
             _ => panic!("Expected a while statement")
+        }
+    }
+    
+    fn visit_function_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Function { name, params: _, body: _ } => {
+                let function = Value::Func(Function::new(stmt.clone()));
+                self.environment.define(name.lexeme.clone(), function);
+            },
+            _ => panic!("Expected a function statement")
         }
     }
 }

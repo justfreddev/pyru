@@ -1,9 +1,9 @@
 #[macro_export]
 macro_rules! arithmetic {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
-        if let LiteralType::Num(ln) = $num1 {
-            if let LiteralType::Num(rn) = $num2 {
-                return LiteralType::Num(ln $operator rn);
+        if let Value::Literal(LiteralType::Num(ln)) = $num1 {
+            if let Value::Literal(LiteralType::Num(rn)) = $num2 {
+                return Value::Literal(LiteralType::Num(ln $operator rn));
             }
         }
     };
@@ -12,9 +12,9 @@ macro_rules! arithmetic {
 #[macro_export]
 macro_rules! comparison {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
-        if let LiteralType::Num(ln) = $num1 {
-            if let LiteralType::Num(rn) = $num2 {
-                return if ln $operator rn { LiteralType::True } else { LiteralType::False }
+        if let Value::Literal(LiteralType::Num(ln)) = $num1 {
+            if let Value::Literal(LiteralType::Num(rn)) = $num2 {
+                return if ln $operator rn { Value::Literal(LiteralType::True) } else { Value::Literal(LiteralType::False) }
             }
         }
     };

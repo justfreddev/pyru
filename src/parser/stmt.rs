@@ -1,9 +1,106 @@
 use paste::paste;
-use std::fmt;
+use std::{ cell::RefCell, fmt, rc::Rc };
 
-use crate::{expr::Expr, stmt_visitor, tokens::Token};
+use crate::{
+    environment::Environment,
+    expr::{ Expr, LiteralType, Value },
+    interpreter::Interpreter,
+    stmt_visitor,
+    tokens::Token
+};
 
-#[derive(Clone, Debug)]
+pub trait Callable {
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value;
+    fn arity(&self) -> usize;
+    fn _fn_to_string(&self) -> String;
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Function {
+    declaration: Stmt,
+}
+
+impl Function {
+    pub fn new(declaration: Stmt) -> Self {
+        match declaration {
+            Stmt::Function { .. } => Self { declaration },
+            _ => panic!("Expected declaration to be a function statement")
+        }
+    }
+}
+
+impl Callable for Function {
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
+        match &self.declaration {
+            Stmt::Function { name: _, params, body } => {
+                let mut environment = Environment::new(Some(Rc::new(RefCell::new(interpreter.globals.clone()))));
+                for i in 0..params.len() {
+                    environment.define(params[i].lexeme.clone(), arguments[i].clone())
+                }
+
+                interpreter.execute_block(body.clone(), environment);
+                Value::Literal(LiteralType::Nil)
+            },
+            _ => panic!("Expected declaration to be a function statement")
+        }
+        
+        
+    }
+    
+    fn arity(&self) -> usize {
+        match &self.declaration {
+            Stmt::Function { name: _, params, body: _ } => params.len(),
+            _ => panic!("Expected declaration to be a function statement")
+        }
+    }
+    
+    fn _fn_to_string(&self) -> String {
+        match &self.declaration {
+            Stmt::Function { name, params: _, body: _ } => format!("<fn {}>", name.lexeme),
+            _ => panic!("Expected declaration to be a function statement")
+        }
+        
+    }
+}
+
+impl fmt::Display for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.declaration)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct NativeFunction {
+    name: String,
+    arity: usize,
+    fun: fn(&mut Interpreter, Vec<Value>) -> Value
+}
+
+impl NativeFunction {
+    pub fn new(name: String, arity: usize, fun: fn(&mut Interpreter, Vec<Value>) -> Value) -> Self {
+        Self {
+            name,
+            arity,
+            fun
+        }
+    }
+}
+
+impl Callable for NativeFunction {
+    fn arity(&self) -> usize {
+        self.arity
+    }
+
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
+        (self.fun)(interpreter, arguments)
+    }
+    
+    fn _fn_to_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
     Expression {
         expression: Expr
@@ -27,6 +124,11 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>
     },
+    Function {
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>
+    }
 }
 
 impl fmt::Display for Stmt {
@@ -52,8 +154,9 @@ impl fmt::Display for Stmt {
                 
             },
             Stmt::While { condition, body } => write!(f, "While({condition} {body})"),
+            Stmt::Function { name, params, body } => write!(f, "Function({name} {params:?} {body:?})"),
         }
     }
 }
 
-stmt_visitor!(Expression, Print, Var, Block, If, While);
+stmt_visitor!(Expression, Print, Var, Block, If, While, Function);

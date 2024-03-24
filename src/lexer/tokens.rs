@@ -18,7 +18,7 @@ pub enum TokenType {
     Eof,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
@@ -46,7 +46,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let gap = 14 - &self.token_type.to_string().len();
         let gap_string = " ".repeat(gap);
-        write!(f, "{}{:?} | ({}, {})", gap_string, self.token_type, self.lexeme, if self.literal.is_empty() {String::from("N/A")} else {self.literal.clone()})
+        write!(f, "{}{:?} | {}", gap_string, self.token_type, self.lexeme)
     }
 }
 
