@@ -35,7 +35,7 @@ impl Callable for Function {
             Stmt::Function { name: _, params, body } => {
                 let mut environment = Environment::new(Some(Rc::new(RefCell::new(interpreter.globals.clone()))));
                 for i in 0..params.len() {
-                    environment.define(params[i].lexeme.clone(), arguments[i].clone())
+                    environment.define(params[i].lexeme.clone(), arguments[i].clone());
                 }
 
                 interpreter.execute_block(body.clone(), environment);

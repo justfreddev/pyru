@@ -37,7 +37,7 @@ impl Parser {
 
     fn try_declaration(&mut self) -> Stmt {
         if self.match_token(vec![&TokenType::Fun]) {
-            self.function("function".to_string())
+            self.function("function")
         } else if self.match_token(vec![&TokenType::Var]) {
             self.var_declaration()
         } else {
@@ -65,7 +65,7 @@ impl Parser {
         if self.match_token(vec![&TokenType::Else]) {
             else_branch = Some(Box::new(self.statement()));
         };
-        Stmt::If { condition, then_branch: Box::new(then_branch), else_branch: else_branch }
+        Stmt::If { condition, then_branch: Box::new(then_branch), else_branch }
     }
 
     fn print_statement(&mut self) -> Stmt {
@@ -147,21 +147,21 @@ impl Parser {
         Stmt::Expression{ expression: expr }
     }
 
-    fn function(&mut self, kind: String) -> Stmt {
+    fn function(&mut self, kind: &str) -> Stmt {
         let name = self.consume(TokenType::Identifier, format!("Expect {kind} name.").as_str());
         self.consume(TokenType::LeftParen, format!("Expect '(' after {kind} name.").as_str());
         let mut parameters: Vec<Token> = Vec::new();
         if !self.check(TokenType::RightParen) {
             loop {
                 if parameters.len() >= 255 {
-                    Interpreter::token_error(self.peek(), format!("Can't have more than 255 parameters.").as_str());
+                    Interpreter::token_error(self.peek(), "Can't have more than 255 parameters.");
                 }
 
-                parameters.push(self.consume(TokenType::Identifier, format!("Expect parameter name.").as_str()));
+                parameters.push(self.consume(TokenType::Identifier, "Expect parameter name."));
                 if !self.match_token(vec![&TokenType::Comma]) { break };
             }
         }
-        self.consume(TokenType::RightParen, format!("Expect ')' after parameters.").as_str());
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.");
         
         self.consume(TokenType::LeftBrace, format!("Expect '{{' before {kind} body.").as_str());
         let body = self.block();

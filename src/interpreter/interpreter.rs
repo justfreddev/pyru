@@ -207,14 +207,13 @@ impl expr::ExprVisitor<Value> for Interpreter {
                         }
                     TokenType::Minus => {
                         if let Value::Literal(LiteralType::Num(n)) = right {
-                            return Value::Literal(LiteralType::Num(-n))
-                        } else {
-                            panic!("Couldn't negate number??")
+                            return Value::Literal(LiteralType::Num(-n));
                         }
+                        panic!("Couldn't negate number??")
                     },
                     _ => panic!("Expected a minus"),
                 };
-                return Value::Literal(LiteralType::Nil)
+                Value::Literal(LiteralType::Nil)
             },
             _ => panic!("Expected a unary expression")
         }
@@ -249,11 +248,9 @@ impl expr::ExprVisitor<Value> for Interpreter {
             Expr::Logical { left, operator, right } => {
                 let left = self.evaluate(left);
                 if operator.token_type == TokenType::Or {
-                    if self.is_truthy(&left) {
-                        return left
-                    } else {
-                        if !self.is_truthy(&left) { return left };
-                    }
+                    if self.is_truthy(&left) { return left }
+                    if !self.is_truthy(&left) { return left };
+                    
                 }
                 self.evaluate(right)
             }
@@ -299,12 +296,12 @@ impl expr::ExprVisitor<Value> for Interpreter {
 
                 match callee {
                     Value::Func(f) => {
-                        if args.len() != f.arity() { panic!("Expected {} arguments but got {}.", args.len(), f.arity()) }
-                        return f.call(self, args);
+                        assert!(!args.len() != f.arity(), "expected {} arguments but got {}.", args.len(), f.arity());
+                        f.call(self, args)
                     },
                     Value::NativeFunc(nf) => {
-                        if args.len() != nf.arity() { panic!("Expected {} arguments but got {}.", args.len(), nf.arity()) }
-                        return nf.call(self, args)
+                        assert!(!args.len() != nf.arity(), "expected {} arguments but got {}.", args.len(), nf.arity());
+                        nf.call(self, args)
                     },
                     _ => panic!("Can only call functions and classes"),
                 }
@@ -367,7 +364,7 @@ impl stmt::StmtVisitor<()> for Interpreter {
                 let condition_evaluation = &self.evaluate(condition);
                 let else_branch_copy = else_branch.clone();
                 if self.is_truthy(condition_evaluation) {
-                    self.execute(&then_branch);
+                    self.execute(then_branch);
                 } else if else_branch.is_some() {
                     self.execute(&else_branch_copy.unwrap());
                 }
