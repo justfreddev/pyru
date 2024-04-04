@@ -13,21 +13,30 @@ pub trait Callable {
     fn _fn_to_string(&self) -> String;
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Func {
     name: String,
-    declaration: Stmt,
     pub arity: usize,
+    declaration: Stmt,
+    closure: Rc<RefCell<dyn Environment>>
+}
+
+impl PartialEq for Func {
+    fn eq(&self, other: &Self) -> bool {
+        println!("Should never be called");
+        self.name == other.name && self.arity == other.arity && self.declaration == other.declaration
+    }
 }
 
 impl Func {
-    pub fn new(declaration: Stmt) -> Result<Self, InterpreterError> {
+    pub fn new(declaration: Stmt, closure: Rc<RefCell<dyn Environment>>) -> Result<Self, InterpreterError> {
         match &declaration {
             Stmt::Function { name, params, body: _ } => {
                 Ok(Self {
                     name: name.lexeme.clone(),
                     arity: params.len(),
-                    declaration
+                    declaration,
+                    closure
                 })
             },
             _ => Err(InterpreterError::ExpectedFunctionStatementForDeclaration)
@@ -40,10 +49,11 @@ impl Callable for Func {
     fn call(&self, interpreter: &mut crate::interpreter::Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
         match &self.declaration {
             Stmt::Function { name: _,  params, body } => {
+
                 let environment = Rc::new(
                     RefCell::new(
                         LocalEnvironment::new(
-                            Some(Rc::clone(&interpreter.environment) as Rc<RefCell<dyn Environment>>)
+                            Some(Rc::clone(&self.closure))
                         )
                     )
                 );

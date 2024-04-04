@@ -81,7 +81,7 @@ impl Environment for GlobalEnvironment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LocalEnvironment {
     values: HashMap<String, Rc<RefCell<Value>>>,
     enclosing: Option<Rc<RefCell<dyn Environment>>>

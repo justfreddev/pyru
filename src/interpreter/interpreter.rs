@@ -546,7 +546,7 @@ impl stmt::StmtVisitor<Result<(), Result<Value, InterpreterError>>> for Interpre
     fn visit_function_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Function { name, params: _, body: _ } => {
-                let function = match Func::new(stmt.clone()) {
+                let function = match Func::new(stmt.clone(), self.environment.clone()) {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e))
                 };
