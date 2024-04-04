@@ -216,11 +216,15 @@ impl Lexer {
                     token = TokenType::Greater;
                 }
             },
-            '\n' => {
+            '\r' => {
+                if self.match_token('\n') {
+                    self.line += 1;
+                    return Ok(());
+                }
                 self.line += 1;
                 return Ok(());
             },
-            ' ' | '\r' | '\t' => return Ok(()),
+            ' ' | '\n' | '\t' => return Ok(()),
             '/' => {
                 if let Err(e) = self.comment() {
                     return Err(e);
