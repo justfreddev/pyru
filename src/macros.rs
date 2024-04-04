@@ -3,7 +3,8 @@ macro_rules! arithmetic {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
             if let Value::Literal(LiteralType::Num(rn)) = $num2 {
-                return Err(Value::Literal(LiteralType::Num(ln $operator rn)));
+                // println!("{ln} {} {rn}", stringify!($operator));
+                return Ok(Value::Literal(LiteralType::Num(ln $operator rn)));
             }
         }
     };
@@ -14,11 +15,24 @@ macro_rules! comparison {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
             if let Value::Literal(LiteralType::Num(rn)) = $num2 {
-                return if ln $operator rn { Err(Value::Literal(LiteralType::True)) } else { Err(Value::Literal(LiteralType::False)) }
+                // println!("{ln} {} {rn}", stringify!($operator));
+                return if ln $operator rn { Ok(Value::Literal(LiteralType::True)) } else { Ok(Value::Literal(LiteralType::False)) }
             }
         }
     };
 }
+
+
+#[macro_export]
+macro_rules! alteration {
+    ( $self:ident ; $operator:tt ; $name:expr ; $value:expr ) => {
+        if let Value::Literal(LiteralType::Num(n)) = $value {
+            return $self.environment.borrow_mut().assign($name.clone(), Value::Literal(LiteralType::Num(n $operator 1.0)))
+        };
+        return Err(InterpreterError::ExpectedNumber);
+    };
+}
+
 
 #[macro_export]
 macro_rules! getresult {

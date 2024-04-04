@@ -1,26 +1,35 @@
+#[path = "./error.rs"]
+mod error;
+
+#[path = "./interpreter/environment.rs"]
+mod enviromnent;
+
 #[path = "./interpreter/interpreter.rs"]
 mod interpreter;
 
 #[path = "./lexer/lexer.rs"]
 mod lexer;
 
-#[path = "./lexer/tokens.rs"]
-mod tokens;
-
-#[path = "./parser/environment.rs"]
-mod environment;
-
-#[path = "./parser/expr.rs"]
-mod expr;
+#[path = "./macros.rs"]
+mod macros;
 
 #[path = "./parser/parser.rs"]
 mod parser;
 
-#[path = "./parser/stmt.rs"]
+#[path = "./values/callable.rs"]
+mod callable;
+
+#[path = "./values/expr.rs"]
+mod expr;
+
+#[path = "./values/stmt.rs"]
 mod stmt;
 
-#[path = "./macros.rs"]
-mod macros;
+#[path = "./values/token.rs"]
+mod token;
+
+#[path = "./values/value.rs"]
+mod value;
 
 use std::io::Write;
 
@@ -28,23 +37,6 @@ use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
 
-// Runs the interpreter
-fn run(source: String) {
-    let mut lexer = Lexer::new(source); // Initialises lexer with the source code
-    let tokens = lexer.scan(); // Lexer scans the raw input and generates a vector of tokens from them
-
-    let mut parser = Parser::new(tokens); // Initialises parser with the vector of tokens
-    let statements = parser.parse(); // Parser generates a vector of statements from the tokens
-
-    // for stmt in &statements {
-    //     println!("{stmt}");
-    // }
-
-    let mut interpreter = Interpreter::new(); // Initalises interpreter
-    interpreter.interpret(statements); // Interpret the vector of statements and generate an output
-}
-
-// Creates a REPL for the end-user to enter their source code and then returns it
 fn repl() -> String {
     let mut source = String::new();
     loop {
@@ -61,6 +53,31 @@ fn repl() -> String {
 }
 
 fn main() {
-    let source = repl(); // Get the source code
-    run(source); // Run the interpreter with the source code
+    let source = repl();
+
+    let mut lexer = Lexer::new(source);
+    let tokens = match lexer.run() {
+        Ok(tokens) => tokens,
+        Err(e) => {
+            eprintln!("A lexer error occured: {e}");
+            return;
+        }
+    };
+
+    let mut parser = Parser::new(tokens);
+    let statements = match parser.parse() {
+        Ok(statements) => statements,
+        Err(e) => {
+            eprintln!("A parser error occured: {e}");
+            return;
+        }
+    };
+
+    let mut interpreter = Interpreter::new();
+    match interpreter.interpret(statements) {
+        Ok(_) => {},
+        Err(e) => {
+            eprintln!("An interpreter error occured: {e}")
+        }
+    }
 }

@@ -1,8 +1,8 @@
 use std::fmt;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
-    LeftParen, RightParen, LeftBrace, RightBrace, Comma,
+    LParen, RParen, LBrace, RBrace, Comma,
     Dot, Minus, Plus, Semicolon, FSlash, Asterisk, Incr, Decr,
 
     Bang, BangEqual, Equal, EqualEqual,
@@ -10,8 +10,8 @@ pub enum TokenType {
 
     Identifier, String, Num,
 
-    And, Class, Else, False, Fun, For, If, Nil, Or,
-    Print, Return, Super, This, True, Var, While,
+    And, Class, Else, False, For, Fun, If, Nil, 
+    Or, Print, Return, Super, This, True, Var, While,
 
     Comment,
 
@@ -24,8 +24,8 @@ pub struct Token {
     pub lexeme: String,
     pub literal: String,
     pub line: usize,
-    _start: usize,
-    _end: usize,
+    pub start: usize,
+    pub end: usize
 }
 
 impl Token {
@@ -35,27 +35,19 @@ impl Token {
             lexeme,
             literal,
             line,
-            _start: start,
-            _end: end
-        } 
-    }
-}
-
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // let gap = 14 - &self.token_type.to_string().len();
-        // let gap_string = " ".repeat(gap);
-        write!(f, "{:?} | {}", self.token_type, self.lexeme)
+            start,
+            end
+        }
     }
 }
 
 impl fmt::Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TokenType::LeftParen => write!(f, "LeftParen"),
-            TokenType::RightParen => write!(f, "RightParen"),
-            TokenType::LeftBrace => write!(f, "LeftBrace"),
-            TokenType::RightBrace => write!(f, "RightBrace"),
+            TokenType::LParen => write!(f, "LParen"),
+            TokenType::RParen => write!(f, "RParen"),
+            TokenType::LBrace => write!(f, "LBrace"),
+            TokenType::RBrace => write!(f, "RBrace"),
             TokenType::Comma => write!(f, "Comma"),
             TokenType::Dot => write!(f, "Dot"),
             TokenType::Minus => write!(f, "Minus"),
@@ -80,8 +72,8 @@ impl fmt::Display for TokenType {
             TokenType::Class => write!(f, "Class"),
             TokenType::Else => write!(f, "Else"),
             TokenType::False => write!(f, "False"),
-            TokenType::Fun => write!(f, "Fun"),
             TokenType::For => write!(f, "For"),
+            TokenType::Fun => write!(f, "Fun"),
             TokenType::If => write!(f, "If"),
             TokenType::Nil => write!(f, "Nil"),
             TokenType::Or => write!(f, "Or"),
@@ -90,10 +82,16 @@ impl fmt::Display for TokenType {
             TokenType::Super => write!(f, "Super"),
             TokenType::This => write!(f, "This"),
             TokenType::True => write!(f, "True"),
-            TokenType::Var => write!(f, "Var"),
+            TokenType::Var => write!(f, "var"),
             TokenType::While => write!(f, "While"),
             TokenType::Comment => write!(f, "Comment"),
             TokenType::Eof => write!(f, "Eof"),
         }
+    }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Token{{{}, {}, {}, {}, {}, {}}}", self.token_type, self.lexeme, self.literal, self.line, self.start, self.end)
     }
 }

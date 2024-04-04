@@ -5,100 +5,92 @@ use std::{
 };
 
 use crate::{
-    arithmetic, comparison, environment::Environment, expr::{self, Expr, LiteralType, Value}, getresult, returncheck, stmt::{self, Callable, Function, NativeFunction, Stmt}, tokens::{Token, TokenType}
+    alteration,
+    arithmetic,
+    callable::{Callable, Func, NativeFunc},
+    comparison,
+    enviromnent::{Environment, GlobalEnvironment, LocalEnvironment},
+    error::InterpreterError,
+    expr::{self, Expr},
+    stmt::{self, Stmt},
+    token::TokenType,
+    value::{LiteralType, Value}
 };
 
 pub struct Interpreter {
-    pub globals: Environment,
-    pub environment: Environment
+    pub globals: Rc<RefCell<GlobalEnvironment>>,
+    pub environment: Rc<RefCell<dyn Environment>>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        let mut globals = Environment::new(None);
+        let global = Rc::new(RefCell::new(GlobalEnvironment::new()));
 
-
-        let clock = NativeFunction::new(
+        let clock = NativeFunc::new(
             "clock".to_string(),
             0,
             |_, _| {
-                Value::Literal(LiteralType::Num(
+                Ok(Value::Literal(LiteralType::Num(
                     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64()
-                ))
+                )))
             }
         );
 
-        globals.define("clock".to_string(), Value::NativeFunc(clock));
+        global.borrow_mut().define("clock".to_string(), Value::NativeFunction(clock));
 
         Self {
-            globals: globals.clone(),
-            environment: globals
+            globals: Rc::clone(&global),
+            environment: Rc::clone(&global) as Rc<RefCell<dyn Environment>>
         }
     }
 
-    pub fn line_error(line: usize, message: &str) {
-        Interpreter::report(line, "", message);
-    }
-    
-    pub fn report(line: usize, where_about: &str, message: &str) {
-        println!("[line {line}] Error {where_about}: {message}");
-    }
-
-    pub fn token_error(token: &Token, message: &str) {
-        if token.token_type == TokenType::Eof {
-            Interpreter::report(token.line, " at end", message);
-        } else {
-            Interpreter::report(token.line, format!(" at '{}'", token.lexeme).as_str(), message);
-        }
-    }
-
-    pub fn interpret(&mut self, statements: Vec<Stmt>) {
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), InterpreterError> {
         for stmt in statements {
-            let _ = self.execute(&stmt);
+            let _ = match self.execute(&stmt) {
+                Ok(()) => {},
+                Err(r) => match r {
+                    Ok(_) => {},
+                    Err(e) => return Err(e)
+                }
+            };
+        }
+        Ok(())
+    }
+
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr.accept_expr(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e)
         }
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> Result<(), Value> {
-        let result_result = expr.accept_expr(self);
-        let result = getresult!(result_result);
-        Err(result)
-    }
-
-    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), Value> {
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         stmt.accept_stmt(self)
-
     }
 
-    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Environment) -> Result<(), Value> {
-        let previous = self.environment.clone();
+    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<LocalEnvironment>>) -> Result<(), Result<Value, InterpreterError>> {
+        let previous = Rc::clone(&self.environment);
 
-        self.environment = environment;
+        self.environment = Rc::clone(&environment) as Rc<RefCell<dyn Environment>>;
 
         for statement in statements {
             match self.execute(&statement) {
-                Err(v) => {
-                    match statement {
-                        Stmt::Return { .. } => return Err(v),
-                        _ => {},
-                    }
-                },
-                Ok(_) => {} 
+                Ok(_) => {},
+                Err(r) => match r {
+                    Ok(v) => {self.environment = previous; return Err(Ok(v))},
+                    Err(e) => return Err(Err(e))
+                }
             }
         }
         self.environment = previous;
         Ok(())
     }
 
-    fn unbox<T>(&mut self, value: T) -> T {
-        value
-    }
-
-    fn is_truthy(&mut self, object: &Value) -> bool {
+    fn is_truthy(&mut self, object: &Value) -> Result<bool, InterpreterError> {
         match object {
-            Value::Literal(literal) => !matches!(literal, LiteralType::Nil | LiteralType::False),
-            _ => panic!("Expected a literal value")
+            Value::Literal(literal) => Ok(!matches!(literal, LiteralType::Nil | LiteralType::False)),
+            _ => Err(InterpreterError::ExpectedLiteralValue)
         }
-        
     }
 
     fn is_equal(&mut self, a: &Value, b: &Value) -> bool {
@@ -113,362 +105,471 @@ impl Interpreter {
                     text.truncate(text.len() - 2);
                 }
                 text
-            }
+            },
             LiteralType::Str(s) => s,
             LiteralType::True => "true".to_string(),
             LiteralType::False => "false".to_string(),
             LiteralType::Nil => "nil".to_string()
         }
     }
+
+
 }
-
-impl expr::ExprVisitor<Result<(), Value>> for Interpreter {
-    fn visit_literal_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
+    fn visit_literal_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Literal { value } => Err(Value::Literal(value.clone())),
-            _ => panic!("Expected a literal value")
+            Expr::Literal { value } => return Ok(Value::Literal(value.clone())),
+            _ => Err(InterpreterError::ExpectedLiteralValue)
         }
     }
 
-    fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+    fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Grouping { expression } => {
-                let expression_value = self.unbox(expression.clone());
-                self.evaluate(&expression_value)
+            Expr::Grouping { expression } => self.evaluate(expression),
+            _ => Err(InterpreterError::ExpectedGroupExpression)
+        }
+    }
+
+    fn visit_unary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::Unary { operator, right } => {
+                let right = match self.evaluate(right) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+
+                match operator.token_type {
+                    TokenType::Bang => {
+                        match self.is_truthy(&right) {
+                            Ok(v) => {
+                                if v {
+                                    return Ok(Value::Literal(LiteralType::False));
+                                }
+                                return Ok(Value::Literal(LiteralType::True));
+                            },
+                            Err(e) => return Err(e)
+                        }
+                    },
+                    TokenType::Minus => {
+                        if let Value::Literal(LiteralType::Num(n)) = right {
+                            return Ok(Value::Literal(LiteralType::Num(-n)));
+                        }
+                        return Err(InterpreterError::UnableToNegate)
+                    },
+                    _ => return Err(InterpreterError::ExpectedMinus)
+                }
             },
-            _ => panic!("Expected a group expression")
+            _ => return Err(InterpreterError::ExpectedUnaryExpression)
         }
     }
 
-    fn visit_binary_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+    fn visit_binary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Binary { left, operator, right } => {
-                let left_value = self.unbox(left.clone());
-                let left_result = self.evaluate(&left_value);
-                let right_value = self.unbox(right.clone());
-                let right_result = self.evaluate(&right_value);
-                let left = getresult!(left_result);
-                let right = getresult!(right_result);
-                
+                let left = match self.evaluate(&left) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+                let right = match self.evaluate(&right) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
 
                 match operator.token_type {
                     TokenType::Greater => {
-                        comparison!( > ; left ; right );
-                        panic!("Expected a number")
+                        comparison!( > ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::GreaterEqual => {
-                        comparison!( >= ; left ; right );
-                        panic!("Expected a number")
+                        comparison!( >= ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::Less => {
-                        comparison!( < ; left ; right );
-                        panic!("Expected a number")
+                        comparison!( < ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::LessEqual => {
-                        comparison!( <= ; left ; right );
-                        panic!("Expected a number")
+                        comparison!( <= ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::BangEqual => {
-                        if !self.is_equal(&left, &right) { return Err(Value::Literal(LiteralType::True)) } return Err(Value::Literal(LiteralType::False))
+                        if !self.is_equal(&left, &right) {
+                            return Ok(Value::Literal(LiteralType::True))
+                        }
+                        return Ok(Value::Literal(LiteralType::False))
                     },
                     TokenType::EqualEqual => {
-                        if self.is_equal(&left, &right) { return Err(Value::Literal(LiteralType::True)) } return Err(Value::Literal(LiteralType::False))
-                    },
-                    TokenType::Minus => {
-                        arithmetic!( - ; left ; right );
-                        panic!("Expected a number")
+                        if self.is_equal(&left, &right) {
+                            return Ok(Value::Literal(LiteralType::True))
+                        }
+                        return Ok(Value::Literal(LiteralType::False))
                     },
                     TokenType::Plus => {
                         arithmetic!( + ; left ; right );
-                        panic!("Expected a number")
+                        return Err(InterpreterError::ExpectedNumber)
+                    },
+                    TokenType::Minus => {
+                        arithmetic!( - ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::FSlash => {
-                        arithmetic!( / ; left ; right );
-                        panic!("Expected a number")
+                        arithmetic!( / ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
                     TokenType::Asterisk => {
-                        arithmetic!( * ; left ; right );
-                        panic!("Expected a number")
+                        arithmetic!( * ; left ; right);
+                        return Err(InterpreterError::ExpectedNumber)
                     },
-                    _ => return Err(Value::Literal(LiteralType::Nil)),
-                };
-            }
-            _ => panic!("Expected a binary expression")
-        }
-    }
-
-    fn visit_unary_expr(&mut self, expr: &Expr) -> Result<(), Value> {
-        match expr {
-            Expr::Unary { operator, right } => {
-                let right_value = self.unbox(*right.clone());
-                let right_result = self.evaluate(&right_value);
-                let right = getresult!(right_result);
-                match operator.token_type {
-                    TokenType::Bang => {
-                            if self.is_truthy(&right) {
-                                Value::Literal(LiteralType::False)
-                            } else {
-                                Value::Literal(LiteralType::True)
-                            }
-                        }
-                    TokenType::Minus => {
-                        if let Value::Literal(LiteralType::Num(n)) = right {
-                            return Err(Value::Literal(LiteralType::Num(-n)));
-                        }
-                        panic!("Couldn't negate number??")
-                    },
-                    _ => panic!("Expected a minus"),
-                };
-                Err(Value::Literal(LiteralType::Nil))
+                    _ => return Err(InterpreterError::ExpectedValidBinaryOperator)
+                }
             },
-            _ => panic!("Expected a unary expression")
+            _ => return Err(InterpreterError::ExpectedBinaryExpression)
         }
     }
 
-    fn visit_var_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+    fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Var { name } => {
-                match self.environment.get(name.clone()) {
-                    Value::Literal(l) => Err(Value::Literal(l)),
-                    Value::Func(f) => Err(Value::Func(f)),
-                    Value::NativeFunc(nf) => Err(Value::NativeFunc(nf)),
-                }
+                self.environment.borrow().get(name.clone())
             },
-            _ => panic!("Expected a variable expression")
+            _ => Err(InterpreterError::ExpectedVariableExpression)
         }
     }
-    
-    fn visit_assign_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+
+    fn visit_assign_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Assign { name, value } => {
-                let assign_value_result = self.evaluate(value);
-                let assign_value = getresult!(assign_value_result);
-                self.environment.assign(name.clone(), assign_value.clone());
-                Err(assign_value)
-            }
-            _ => panic!("Expected an assignment expression")
+                let value = match self.evaluate(value) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+                self.environment.borrow_mut().assign(name.clone(), value.clone())
+            },
+            _ => return Err(InterpreterError::ExpectedAssignmentExpression)
         }
     }
-    
-    fn visit_logical_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+
+    fn visit_logical_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Logical { left, operator, right } => {
-                let left_result = self.evaluate(left);
-                let left = getresult!(left_result);
+                let left = match self.evaluate(left) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+                
                 if operator.token_type == TokenType::Or {
-                    if self.is_truthy(&left) { return Err(left) }
-                    if !self.is_truthy(&left) { return Err(left) };
-                    
+                    match self.is_truthy(&left) {
+                        Ok(v) => {
+                            if v {
+                                return Ok(left)
+                            }
+                        },
+                        Err(e) => return Err(e)
+                    }
+                } else {
+                    match self.is_truthy(&left) {
+                        Ok(v) => {
+                            if !v {
+                                return Ok(left)
+                            }
+                        },
+                        Err(e) => return Err(e)
+                    }
                 }
+
                 self.evaluate(right)
-            }
-            _ => panic!("Expected a logical expression")
+            },
+            _ => return Err(InterpreterError::ExpectedLogicalExpression)
         }
     }
-    
-    fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<(), Value> {
+
+    fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Alteration { name, alteration_type } => {
-                let curr_value = self.environment.get(name.clone());
+                let curr_value = match self.environment.borrow().get(name.clone()) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+
                 match alteration_type {
                     TokenType::Incr => {
-                        if let Value::Literal(LiteralType::Num(n)) = curr_value {
-                            self.environment.assign(name.clone(), Value::Literal(LiteralType::Num(n + 1.0)));
-                            return Err(Value::Literal(LiteralType::Num(n + 1.0)));
-                        }
-                        panic!("Why is the current value not a number?? 1")
+                        alteration!( self ;  + ; name ; curr_value);
                     },
                     TokenType::Decr => {
-                        if let Value::Literal(LiteralType::Num(n)) = curr_value {
-                            self.environment.assign(name.clone(), Value::Literal(LiteralType::Num(n - 1.0)));
-                            return Err(Value::Literal(LiteralType::Num(n - 1.0)));
-                        }
-                        panic!("Why is the current value not a number?? 2")
+                        alteration!( self ; - ; name ; curr_value);
                     },
-                    _ => panic!("Why is it not an increment or decrement token?")
+                    _ => return Err(InterpreterError::ExpectedAlterationToken)
                 }
             },
-            _ => panic!("Expected an alteration expression")
+            _ => return Err(InterpreterError::ExpectedAlterationExpression)
         }
     }
-    
-    fn visit_call_expr(&mut self, expr: &Expr) -> Result<(), Value> {
-        println!("visit_call_expr()");
+
+    fn visit_call_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Call { callee, paren: _paren, arguments: arguements } => {
-                let callee_result = self.evaluate(callee);
-                let callee = getresult!(callee_result);
-                
+            Expr::Call { callee, paren: _, arguments } => {
+                let callee = match self.evaluate(callee) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e)
+                };
+
                 let mut args: Vec<Value> = Vec::new();
-                for argument in arguements {
-                    let arg_result = self.evaluate(argument);
-                    let arg = getresult!(arg_result);
+
+                for argument in arguments {
+                    let arg = match self.evaluate(argument) {
+                        Ok(v) => v,
+                        Err(e) => return Err(e)
+                    };
                     args.push(arg);
                 }
 
                 match callee {
-                    Value::Func(f) => {
-                        assert!(!args.len() != f.arity(), "expected {} arguments but got {}.", args.len(), f.arity());
-                        let res = f.call(self, args);
-                        Err(res)
+                    Value::Function(f) => {
+                        if args.len() != f.arity {
+                            return Err(
+                                InterpreterError::ArgsDifferFromArity{
+                                    args: args.len(),
+                                    arity: f.arity
+                                }
+                            )
+                        }
+                        return f.call(self, args)
                     },
-                    Value::NativeFunc(nf) => {
-                        assert!(!args.len() != nf.arity(), "expected {} arguments but got {}.", args.len(), nf.arity());
-                        Err(nf.call(self, args))
-                    },
-                    _ => panic!("Can only call functions and classes"),
+                    Value::NativeFunction(nf) => {
+                        if args.len() != nf.arity {
+                            return Err(
+                                InterpreterError::ArgsDifferFromArity{
+                                    args: args.len(),
+                                    arity: nf.arity
+                                }
+                            )
+                        }
+                        return nf.call(self, args)
+                    }
+                    Value::Literal(_) => return Err(InterpreterError::ExpectedFunctionOrClass)
                 }
-            },
-            _ => panic!("Expected a call expression")
+            }
+            _ => return Err(InterpreterError::ExpectedCallExpression)
         }
     }
 }
 
-impl stmt::StmtVisitor<Result<(), Value>> for Interpreter {
-    fn visit_expression_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+impl stmt::StmtVisitor<Result<(), Result<Value, InterpreterError>>> for Interpreter {
+    fn visit_expression_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Expression { expression } => {
-                return self.evaluate(&expression.clone());
+                return match self.evaluate(&expression.clone()) {
+                    Ok(_) => Ok(()), // MAY NEED TO CHANGE
+                    Err(e) => return Err(Err(e))
+                }
             },
-            _ => panic!("Expected an expression statement"),
+            _ => return Err(Err(InterpreterError::ExpectedExpressionStatement))
         }
     }
 
-    fn visit_print_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+    fn visit_print_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Print { expression } => {
-                let value_result = self.evaluate(&expression.clone());
-                let value = getresult!(value_result);
+                let value = match self.evaluate(expression) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
                 match value {
                     Value::Literal(literal) => {
                         println!("{}", self.stringify(literal));
                         Ok(())
                     },
-                    _ => panic!("Expected a literal value")
+                    _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue))
                 }
-                
             },
-            _ => panic!("Exepcted a print statement")
+            _ => return Err(Err(InterpreterError::ExpectedPrintStatement))
         }
     }
 
-    fn visit_var_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+    fn visit_var_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Var { name, initializer } => {
                 let mut value = Value::Literal(LiteralType::Nil);
 
                 if let Some(initializer_expr) = initializer {
-                    let evaluation_result = self.evaluate(initializer_expr);
-                    value = getresult!(evaluation_result);
+                    value = match self.evaluate(initializer_expr) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
                 }
-
-                self.environment.define(name.lexeme.clone(), value);
+                self.environment.borrow_mut().define(name.lexeme.clone(), value);
                 Ok(())
             },
-            _ => panic!("Expected a var statement")
+            _ => Err(Err(InterpreterError::ExpectedVarStatement))
         }
     }
 
-    fn visit_block_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+    fn visit_block_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Block { statements } => {
-                let _ = self.execute_block(
+                let _ = match self.execute_block(
                     statements.clone(),
-                    Environment::new(Some(Rc::new(RefCell::new(self.environment.clone()))))
-                );
+                    Rc::new(RefCell::new(LocalEnvironment::new(Some(self.environment.clone()))))
+                ) {
+                    Ok(_) => {},
+                    Err(r) => match r {
+                        Ok(v) => return Err(Ok(v)),
+                        Err(e) => return Err(Err(e))
+                    }
+                };
                 Ok(())
             },
-            _ => panic!("Expected a block statement")
+            _ => Err(Err(InterpreterError::ExpectedBlockStatement))
         }
     }
-    
-    fn visit_if_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+
+    fn visit_if_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::If { condition, then_branch, else_branch } => {
-                let condition_evaluation_result = &self.evaluate(condition);
-                let condition_evaluation = getresult!(condition_evaluation_result);
-                let else_branch_copy = else_branch.clone();
-                if self.is_truthy(condition_evaluation) {
-                    let _ = self.execute(then_branch);
+                let condition_evaluation = match self.evaluate(&condition) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+
+                let condition_evaluation_result = match self.is_truthy(&condition_evaluation) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+                if condition_evaluation_result {
+                    let _ = match self.execute(&then_branch) {
+                        Ok(_) => {},
+                        Err(r) => match r {
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e))
+                        }
+                    };
                 } else if else_branch.is_some() {
-                    let _ = self.execute(&else_branch_copy.unwrap());
+                    let _ = match self.execute(&else_branch.as_ref().unwrap()) {
+                        Ok(_) => {},
+                        Err(r) => match r {
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e))
+                        }
+                    };
                 }
                 Ok(())
-            }
-            _ => panic!("Expected an if statement")
+            },
+            _ => return Err(Err(InterpreterError::ExpectedIfStatement))
         }
-        
     }
-    
-    fn visit_while_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+
+    fn visit_while_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::While { condition, body } => {
                 let body = *body.clone();
-                let mut condition_evaluation_result = self.evaluate(condition);
-                let mut condition_evaluation = getresult!(condition_evaluation_result);
-                let mut condition_result = self.is_truthy(&condition_evaluation);
+                let mut condition_evaluation = match self.evaluate(condition) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+                let mut condition_result = match self.is_truthy(&condition_evaluation) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
                 while condition_result {
-                    let _ = self.execute(&body);
-                    condition_evaluation_result = self.evaluate(condition);
-                    condition_evaluation = getresult!(condition_evaluation_result);
-                    condition_result = self.is_truthy(&condition_evaluation);
+                    let _ = match self.execute(&body) {
+                        Ok(_) => {},
+                        Err(r) => match r {
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e))
+                        }
+                    };
+                    condition_evaluation = match self.evaluate(condition) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
+                    condition_result = match self.is_truthy(&condition_evaluation) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
                 }
                 Ok(())
             }
             _ => panic!("Expected a while statement")
         }
     }
-    
-    fn visit_for_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+
+    fn visit_for_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::For { initializer, condition, increment, body } => {
                 if initializer.is_some() {
-                    let x = self.execute(*&initializer.as_ref().unwrap());
-                    returncheck!(x);
+                    let _ = match self.execute(&initializer.as_ref().unwrap()) {
+                        Ok(_) => {},
+                        Err(r) => match r {
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e))
+                        }
+                    };
                 }
-                let mut condition_evaluation_result = self.evaluate(condition);
-                let mut condition_evaluation = getresult!(condition_evaluation_result);
-                let mut condition_result = self.is_truthy(&condition_evaluation);
+                let mut condition_evaluation = match self.evaluate(condition) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+                let mut condition_result = match self.is_truthy(&condition_evaluation) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+
                 while condition_result {
-                    let y = self.execute(&body);
-                    returncheck!(y);
+                    let _ = match self.execute(&body) {
+                        Ok(_) => {},
+                        Err(r) => match r{
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e))
+                        }
+                    };
                     if increment.is_some() {
-                        let _ = self.evaluate(*&increment.as_ref().unwrap());
+                        let _ = match self.evaluate(&increment.as_ref().unwrap()) {
+                            Ok(v) => v,
+                            Err(e) => return Err(Err(e))
+                        };
                     }
-                    condition_evaluation_result = self.evaluate(condition);
-                    condition_evaluation = getresult!(condition_evaluation_result);
-                    condition_result = self.is_truthy(&condition_evaluation);
+                    condition_evaluation = match self.evaluate(condition) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
+                    condition_result = match self.is_truthy(&condition_evaluation) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
                 }
                 Ok(())
             },
-            _ => panic!("Expected a for statement")
+            _ => return Err(Err(InterpreterError::ExpectedForStatement))
         }
     }
-    
-    fn visit_function_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
-        println!("visit_function_stmt()");
+
+    fn visit_function_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Function { name, params: _, body: _ } => {
-                self.environment.define(name.lexeme.clone(), Value::Literal(LiteralType::Nil));
-                let function = Value::Func(Function::new(stmt.clone()));
-                self.environment.assign(name.clone(), function);
+                let function = match Func::new(stmt.clone()) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e))
+                };
+                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Function(function));
                 Ok(())
             },
-            _ => panic!("Expected a function statement")
+            _ => Err(Err(InterpreterError::ExpectedFunctionStatement))
         }
     }
-    
-    fn visit_return_stmt(&mut self, stmt: &Stmt) -> Result<(), Value> {
+
+    fn visit_return_stmt(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
         match stmt {
             Stmt::Return { keyword: _, value } => {
                 let mut return_value = Value::Literal(LiteralType::Nil);
                 if value.is_some() {
-                    let return_value_result = self.evaluate(value.as_ref().unwrap());
-                    return_value = getresult!(return_value_result);
+                    return_value = match self.evaluate(&value.as_ref().unwrap()) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e))
+                    };
                 }
-                Err(return_value)
+                Err(Ok(return_value))
             },
-            _ => panic!("Expected a return statement")
+            _ => return Err(Err(InterpreterError::ExpectedReturnStatement))
         }
     }
 }

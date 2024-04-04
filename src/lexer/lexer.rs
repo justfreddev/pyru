@@ -1,35 +1,31 @@
 use std::collections::HashMap;
 
 use crate::{
+    error::LexerError,
     keywords,
-    interpreter,
-    tokens::{Token, TokenType}
+    token::{ Token, TokenType }
 };
 
 pub struct Lexer {
     source: String,
-    pub tokens: Vec<Token>,
+    tokens: Vec<Token>,
     start: usize,
     curr: usize,
     line: usize,
-    keywords: HashMap<String, TokenType>,
+    keywords: HashMap<String, TokenType>
 }
 
 impl Lexer {
     pub fn new(source: String) -> Self {
-        // Initialise a hashmap containing all the keywords of the language
         let mut kw: HashMap<String, TokenType> = HashMap::new();
-
         keywords!(
-            kw ;
+            kw;
             And, Class, Else, False, For, Fun, If, Nil, Or,
-            Print, Return,Super, This, True, Var, While
+            Print, Return, Super, This, True, Var, While
         );
-
         Self {
             source,
-            tokens: Vec::new(), // Initialise an empty vector for the tokens
-            // Initialise the pointers
+            tokens: Vec::new(),
             start: 0,
             curr: 0,
             line: 1,
@@ -37,46 +33,24 @@ impl Lexer {
         }
     }
 
-    fn peek(&self) -> char {
-        if self.is_at_end() {
-            return '\0';
+    pub fn run(&mut self) -> Result<Vec<Token>, LexerError> {
+        while !self.is_at_end() {
+            self.start = self.curr;
+            if let Err(e) = self.scan_token() {
+                return Err(e);
+            }
         }
-        self.source.chars().nth(self.curr).unwrap()
-    }
-
-    fn peek_next(&self) -> char {
-        if self.curr + 1 >= self.source.len() {
-            return '\0';
-        }
-        self.source.chars().nth(self.curr + 1).unwrap()
-    }
-
-    fn is_at_end(&self) -> bool {
-        self.curr >= self.source.len()
-    }
-
-    // Advance to the next token
-    fn advance(&mut self) -> char {
-        return if let Some(c) = self.source.chars().nth(self.curr) {
-            self.curr += 1;
-            c
-        } else {
-            self.error(self.line, "No more characters left?");
-            '\0'
-        }
-    }
-
-    fn match_token(&mut self, expected: char) -> bool {
-        if self.is_at_end() {
-            return false;
-        };
-
-        if self.source.chars().nth(self.curr).unwrap() != expected {
-            return false;
-        }
-
-        self.curr += 1;
-        true
+        self.tokens.push(
+            Token::new(
+                TokenType::Eof,
+                "".to_string(),
+                "".to_string(),
+                self.line,
+                self.start,
+                self.curr
+            )
+        );
+        Ok(self.tokens.clone())
     }
 
     fn add_token(&mut self, token_type: TokenType) {
@@ -88,71 +62,78 @@ impl Lexer {
         let text = String::from(&self.source[self.start..self.curr]);
         self.tokens.push(Token::new(token_type, text, literal, self.line, self.start, self.curr));
     }
-    
-    fn is_digit(&mut self, c: char) -> bool {
-        c.is_ascii_digit()
-    }
-    
-    fn is_alpha(&self, c: char) -> bool {
-        c.is_ascii_alphabetic() ||
-        (c == '_')
-    }
-    
-    fn string(&mut self) {
+
+    fn string(&mut self) -> Result<(), LexerError> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
             }
-            self.advance();
+            if let Err(e) = self.advance() {
+                return Err(e);
+            }
         }
 
         if self.is_at_end() {
-            self.error(self.line, "Unterminated string.");
+            return Err(LexerError::UnterminatedString{ line: self.line });
         }
 
-        self.advance();
+        if let Err(e) = self.advance() {
+            return Err(e);
+        }
 
         let value: String = String::from(&self.source[self.start + 1..self.curr - 1]);
         self.add_string_token(TokenType::String, value);
+        Ok(())
     }
 
-    fn number(&mut self) {
+    fn number(&mut self) -> Result<(), LexerError> {
         while self.is_digit(self.peek()) {
-            self.advance();
+            if let Err(e) = self.advance() {
+                return Err(e)
+            }
         }
 
         if self.peek() == '.' && self.is_digit(self.peek_next()) {
-            self.advance();
+            if let Err(e) = self.advance() {
+                return Err(e);
+            }
 
             while self.is_digit(self.peek()) {
-                self.advance();
+                if let Err(e) = self.advance() {
+                    return Err(e);
+                }
             }
         }
         
         let value = String::from(&self.source[self.start..self.curr]);
         self.add_string_token(TokenType::Num, value);
+        Ok(())
     }
 
-    fn identifier(&mut self) {
-
+    fn identifier(&mut self) -> Result<(), LexerError> {
         while self.is_alpha(self.peek()) {
-            self.advance();
+            if let Err(e) = self.advance() {
+                return Err(e);
+            }
         }
 
         let text = String::from(&self.source[self.start..self.curr]);
         let token_type: TokenType = match self.keywords.get(&text) {
-            Some(v) => *v,
+            Some(v) => v.clone(),
             None => TokenType::Identifier,
         };
 
         self.add_token(token_type);
+        Ok(())
     }
 
-    fn comment(&mut self) {
+    fn comment(&mut self) -> Result<(), LexerError> {
         if self.match_token('/') {
             loop {
                 if self.peek() != '\n' && !self.is_at_end() {
-                    self.advance();
+                    if let Err(e) = self.advance() {
+                        return Err(e);
+                    }
                 } else {
                     self.tokens.push(
                         Token::new(
@@ -164,23 +145,31 @@ impl Lexer {
                             self.curr
                         )
                     );
-                    return;
+                    return Ok(());
                 }
             }
         } else {
             self.add_token(TokenType::FSlash);
+            Ok(())
         }
     }
 
-    // Scans the next part of the source code and generates a token from it
-    fn scan_token(&mut self) {
-        let c: char = self.advance(); // Gets the next character from the input
-        let token: TokenType; // Initialise the token
+    fn scan_token(&mut self) -> Result<(), LexerError> {
+        let c_result = self.advance();
+        let token: TokenType;
+        let c = if let Ok(cha) = c_result {
+            cha
+        } else {
+            '\0'
+        };
+        if let Err(e) = c_result {
+            return Err(e);
+        };
         match c {
-            '(' => token = TokenType::LeftParen,
-            ')' => token = TokenType::RightParen,
-            '{' => token = TokenType::LeftBrace,
-            '}' => token = TokenType::RightBrace,
+            '(' => token = TokenType::LParen,
+            ')' => token = TokenType::RParen,
+            '{' => token = TokenType::LBrace,
+            '}' => token = TokenType::RBrace,
             ',' => token = TokenType::Comma,
             '.' => token = TokenType::Dot,
             ';' => token = TokenType::Semicolon,
@@ -227,57 +216,86 @@ impl Lexer {
                     token = TokenType::Greater;
                 }
             },
-            ' ' | '\r' | '\t' | '\n' => {
-                return;
+            '\n' => {
+                self.line += 1;
+                return Ok(());
             },
+            ' ' | '\r' | '\t' => return Ok(()),
             '/' => {
-                self.comment();
-                return;
+                if let Err(e) = self.comment() {
+                    return Err(e);
+                }
+                return Ok(());
             },
             '"' => {
-                self.string();
-                return;
+                return match self.string() {
+                    Err(e) => Err(e),
+                    Ok(()) => Ok(())
+                };
             },
             _ => {
                 if self.is_digit(c) {
-                    self.number();
+                    if let Err(e) = self.number() {
+                        return Err(e);
+                    }
                 } else if self.is_alpha(c) {
-                    self.identifier();
+                    if let Err(e) = self.identifier() {
+                        return Err(e);
+                    }
                 } else {
-                    interpreter::Interpreter::line_error(self.line, "Unexpected character.");
+                    return Err(LexerError::UnexpectedCharacter{ c, line: self.line });
                 }
-                return;
+                return Ok(());
             }
         }
         self.add_token(token);
+        Ok(())
     }
 
-    fn _print_tokens(&self) {
-        for token in &self.tokens {
-            println!("{token}");
+    fn advance(&mut self) -> Result<char, LexerError> {
+        return if let Some(c) = self.source.chars().nth(self.curr) {
+            self.curr += 1;
+            Ok(c)
+        } else {
+            Err(LexerError::NoCharactersLeft{ line: self.line })
         }
     }
 
-    // Scans the raw source code and generates a vector of tokens from it
-    pub fn scan(&mut self) -> Vec<Token> {
-        while !self.is_at_end() { // Runs until the lexer reaches the end of the inputted code
-            // Set start ptr to the current ptr's value, because the current ptr is at the start of the next token
-            self.start = self.curr;
-            self.scan_token(); // Scans the next token
-        };
-        
-        // Once it has reached the end, add the EoF token to the tokens vector
-        self.tokens.push(
-            Token::new(TokenType::Eof, String::new(), String::new(), self.line, self.start, self.curr)
-        );
-        self.tokens.clone() // Return the tokens vector with all the generated token
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            return '\0';
+        }
+        self.source.chars().nth(self.curr).unwrap()
     }
 
-    fn error(&mut self, line: usize, message: &str) {
-        self.report(line, "", message);
+    fn peek_next(&self) -> char {
+        if self.curr + 1 >= self.source.len() {
+            return '\0';
+        }
+        self.source.chars().nth(self.curr + 1).unwrap()
+    }
+
+    fn match_token(&mut self, expected: char) -> bool {
+        if self.is_at_end() { return false };
+
+        if self.source.chars().nth(self.curr).unwrap() != expected {
+            return false;
+        };
+
+        self.curr += 1;
+        true
+    }
+
+    fn is_digit(&mut self, c: char) -> bool {
+        c.is_ascii_digit()
     }
     
-    fn report(&mut self, line: usize, where_about: &str, message: &str) {
-        println!("[line {line}] Error {where_about}: {message}");
+    fn is_alpha(&self, c: char) -> bool {
+        c.is_ascii_alphabetic() ||
+        (c == '_')
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.curr >= self.source.len()
     }
 }
