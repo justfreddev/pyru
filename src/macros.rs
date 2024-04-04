@@ -3,7 +3,7 @@ macro_rules! arithmetic {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
             if let Value::Literal(LiteralType::Num(rn)) = $num2 {
-                return Value::Literal(LiteralType::Num(ln $operator rn));
+                return Err(Value::Literal(LiteralType::Num(ln $operator rn)));
             }
         }
     };
@@ -14,8 +14,28 @@ macro_rules! comparison {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
             if let Value::Literal(LiteralType::Num(rn)) = $num2 {
-                return if ln $operator rn { Value::Literal(LiteralType::True) } else { Value::Literal(LiteralType::False) }
+                return if ln $operator rn { Err(Value::Literal(LiteralType::True)) } else { Err(Value::Literal(LiteralType::False)) }
             }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! getresult {
+    ( $result:ident ) => {
+        match $result {
+            Ok(_) => None,
+            Err(v) => Some(v)
+        }.unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! returncheck {
+    ( $result:ident ) => {
+        match $result {
+            Err(v) => return Err(v),
+            Ok(()) => {}
         }
     };
 }

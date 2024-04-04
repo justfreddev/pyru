@@ -1,4 +1,4 @@
-use std::fmt::{self, Debug};
+use std::fmt;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
@@ -29,7 +29,6 @@ pub struct Token {
 }
 
 impl Token {
-    #[must_use]
     pub fn new(token_type: TokenType, lexeme: String, literal: String, line: usize, start: usize, end: usize) -> Self {
         Self {
             token_type,
@@ -44,9 +43,9 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let gap = 14 - &self.token_type.to_string().len();
-        let gap_string = " ".repeat(gap);
-        write!(f, "{}{:?} | {}", gap_string, self.token_type, self.lexeme)
+        // let gap = 14 - &self.token_type.to_string().len();
+        // let gap_string = " ".repeat(gap);
+        write!(f, "{:?} | {}", self.token_type, self.lexeme)
     }
 }
 

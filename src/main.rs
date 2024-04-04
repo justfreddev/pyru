@@ -19,6 +19,7 @@ mod parser;
 #[path = "./parser/stmt.rs"]
 mod stmt;
 
+#[path = "./macros.rs"]
 mod macros;
 
 use std::io::Write;
@@ -34,6 +35,10 @@ fn run(source: String) {
 
     let mut parser = Parser::new(tokens); // Initialises parser with the vector of tokens
     let statements = parser.parse(); // Parser generates a vector of statements from the tokens
+
+    // for stmt in &statements {
+    //     println!("{stmt}");
+    // }
 
     let mut interpreter = Interpreter::new(); // Initalises interpreter
     interpreter.interpret(statements); // Interpret the vector of statements and generate an output

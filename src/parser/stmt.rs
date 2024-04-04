@@ -34,29 +34,29 @@ impl Callable for Function {
         match &self.declaration {
             Stmt::Function { name: _, params, body } => {
                 let mut environment = Environment::new(Some(Rc::new(RefCell::new(interpreter.globals.clone()))));
+                
                 for i in 0..params.len() {
                     environment.define(params[i].lexeme.clone(), arguments[i].clone());
                 }
-
-                interpreter.execute_block(body.clone(), environment);
-                Value::Literal(LiteralType::Nil)
+                match interpreter.execute_block(body.clone(), environment) {
+                    Err(v) => v,
+                    Ok(()) => Value::Literal(LiteralType::Nil)
+                }
             },
             _ => panic!("Expected declaration to be a function statement")
         }
-        
-        
     }
     
     fn arity(&self) -> usize {
         match &self.declaration {
-            Stmt::Function { name: _, params, body: _ } => params.len(),
+            Stmt::Function { name: _, params, .. } => params.len(),
             _ => panic!("Expected declaration to be a function statement")
         }
     }
     
     fn _fn_to_string(&self) -> String {
         match &self.declaration {
-            Stmt::Function { name, params: _, body: _ } => format!("<fn {}>", name.lexeme),
+            Stmt::Function { name, .. } => format!("<fn {}>", name.lexeme),
             _ => panic!("Expected declaration to be a function statement")
         }
         
@@ -100,6 +100,12 @@ impl Callable for NativeFunction {
     }
 }
 
+impl fmt::Display for NativeFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Nativefunction({} {:?})", self.name, self.fun)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
     Expression {
@@ -124,10 +130,20 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>
     },
+    For {
+        initializer: Option<Box<Stmt>>,
+        condition: Expr,
+        increment: Option<Expr>,
+        body: Box<Stmt>
+    },
     Function {
         name: Token,
         params: Vec<Token>,
         body: Vec<Stmt>
+    },
+    Return {
+        keyword: Token,
+        value: Option<Expr>
     }
 }
 
@@ -154,9 +170,32 @@ impl fmt::Display for Stmt {
                 
             },
             Stmt::While { condition, body } => write!(f, "While({condition} {body})"),
-            Stmt::Function { name, params, body } => write!(f, "Function({name} {params:?} {body:?})"),
+            Stmt::Function { name, params, body } => write!(f, "Function({name} {params:#?} {body:#?})"),
+            Stmt::Return { keyword, value } => {
+                if value.is_some() {
+                    write!(f, "Return({keyword} {})", value.as_ref().unwrap())
+                } else {
+                    write!(f, "Return({keyword})")
+                }
+                
+            },
+            Stmt::For { initializer, condition, increment, body } => {
+                if initializer.is_some() {
+                    if increment.is_some() {
+                        write!(f, "For({} {condition} {} {body:#?}", initializer.as_ref().unwrap(), increment.as_ref().unwrap())
+                    } else {
+                        write!(f, "For({} {condition} {body:#?}", initializer.as_ref().unwrap())
+                    }
+                } else {
+                    if increment.is_some() {
+                        write!(f, "For({condition} {} {body:#?}", increment.as_ref().unwrap())
+                    } else {
+                        write!(f, "For({condition} {body:#?}")
+                    }
+                }
+            },
         }
     }
 }
 
-stmt_visitor!(Expression, Print, Var, Block, If, While, Function);
+stmt_visitor!(Expression, Print, Var, Block, If, While, For, Function, Return);

@@ -7,7 +7,7 @@ use std::{
 
 use crate::{ expr::Value, tokens::Token };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Environment {
     values: HashMap<String, Rc<RefCell<Value>>>,
     enclosing: Option<Rc<RefCell<Environment>>>
@@ -31,8 +31,6 @@ impl Environment {
                 }
             },
         }
-
-        println!("{:#?}", self.values);
         panic!("Undefined variable {}.", name.lexeme)
     }
 

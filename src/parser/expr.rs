@@ -23,6 +23,16 @@ pub enum Value {
     NativeFunc(NativeFunction),
 }
 
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Literal(l) => write!(f, "Literal({l})"),
+            Value::Func(fun) => write!(f, "Func({fun})"),
+            Value::NativeFunc(nf) => write!(f, "NativeFunc({nf})")
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Binary {

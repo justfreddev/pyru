@@ -49,6 +49,7 @@ impl Parser {
         if self.match_token(vec![&TokenType::For]) { return self.for_statement() };
         if self.match_token(vec![&TokenType::If]) { return self.if_statement() };
         if self.match_token(vec![&TokenType::Print]) { return self.print_statement() };
+        if self.match_token(vec![&TokenType::Return]) { return self.return_statement() };
         if self.match_token(vec![&TokenType::While]) { return self.while_statement() };
         if self.match_token(vec![&TokenType::LeftBrace]) { return Stmt::Block { statements: self.block() }};
 
@@ -72,6 +73,14 @@ impl Parser {
         let value = self.expression();
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
         Stmt::Print{ expression: value }
+    }
+
+    fn return_statement(&mut self) -> Stmt {
+        let keyword = self.previous().clone();
+        let mut value = None;
+        if !self.check(TokenType::Semicolon) { value = Some(self.expression()) }
+        self.consume(TokenType::Semicolon, "Expect ';' after return value");
+        Stmt::Return { keyword, value }
     }
 
     fn var_declaration(&mut self) -> Stmt {
@@ -104,14 +113,16 @@ impl Parser {
         if self.match_token(vec![&TokenType::Semicolon]) {
             initializer = None;
         } else if self.match_token(vec![&TokenType::Var]) {
-            initializer = Some(self.var_declaration());
+            initializer = Some(Box::new(self.var_declaration()));
         } else {
-            initializer = Some(self.expression_statement());
+            initializer = Some(Box::new(self.expression_statement()));
         }
 
-        let mut condition = None;
+        let condition;
         if !self.check(TokenType::Semicolon) {
-            condition = Some(self.expression());
+            condition = self.expression();
+        } else {
+            condition = Expr::Literal { value: LiteralType::True };
         }
 
         self.consume(TokenType::Semicolon, "Expect ';' after loop condition.");
@@ -123,22 +134,9 @@ impl Parser {
 
         self.consume(TokenType::RightParen, "Expect ')' after for clauses.");
 
-        let mut body = self.statement();
+        let body = self.statement();
 
-        if let Some(incr) = increment {
-            body = Stmt::Block { statements: vec![body, Stmt::Expression { expression: incr }] }
-        }
-
-        if condition.is_none() {
-            condition = Some(Expr::Literal { value: LiteralType::True });
-        }
-        body = Stmt::While { condition: condition.unwrap(), body: Box::new(body) };
-
-        if let Some(init) = initializer {
-            body = Stmt::Block { statements: vec![init, body] };
-        }
-
-        body
+        Stmt::For { initializer, condition, increment, body: Box::new(body) }
     }
 
     fn expression_statement(&mut self) -> Stmt {
