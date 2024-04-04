@@ -82,19 +82,19 @@ impl NativeFunc {
     }
 }
 
-impl fmt::Display for NativeFunc {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({}) {{{:?}}}", self.name, self.arity, self.fun)
+impl Callable for NativeFunc {
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
+        (self.fun)(interpreter, arguments)
+    }
+    
+    fn _fn_to_string(&self) -> String {
+        "<native fn>".to_string()
     }
 }
 
-impl Callable for NativeFunc {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Value>) -> Result<Value, InterpreterError> {
-        todo!()
-    }
-
-    fn _fn_to_string(&self) -> String {
-        "<native fn>".to_string()
+impl fmt::Display for NativeFunc {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}({}) {{{:?}}}", self.name, self.arity, self.fun)
     }
 }
 
