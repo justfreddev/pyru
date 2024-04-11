@@ -15,7 +15,7 @@ pub enum LiteralType {
     Num(f64),
     True,
     False,
-    Nil
+    Null
 }
 
 
@@ -38,7 +38,7 @@ impl fmt::Display for LiteralType {
             LiteralType::Num(n) => write!(f, "Num({n})"),
             LiteralType::True => write!(f, "True"),
             LiteralType::False => write!(f, "False"),
-            LiteralType::Nil => write!(f, "Nil")
+            LiteralType::Null => write!(f, "Null")
         }
     }
 }

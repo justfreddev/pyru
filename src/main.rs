@@ -16,6 +16,9 @@ mod macros;
 #[path = "./parser/parser.rs"]
 mod parser;
 
+#[path = "./semanticanalyser/semanticanalyser.rs"]
+mod semanticanalyser;
+
 #[path = "./values/callable.rs"]
 mod callable;
 
@@ -31,11 +34,15 @@ mod token;
 #[path = "./values/value.rs"]
 mod value;
 
+#[cfg(test)]
+mod tests;
+
 use std::io::Write;
 
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
+use semanticanalyser::SemanticAnalyser;
 
 fn repl() -> String {
     let mut source = String::new();
@@ -65,17 +72,26 @@ fn main() {
     };
 
     let mut parser = Parser::new(tokens);
-    let statements = match parser.parse() {
-        Ok(statements) => statements,
+    let ast = match parser.parse() {
+        Ok(ast) => ast,
         Err(e) => {
             eprintln!("A parser error occured: {e}");
             return;
         }
     };
 
+    let mut semantic_analyser = SemanticAnalyser::new(ast.clone());
+    match semantic_analyser.run() {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("A semantic error occured: {e}");
+            return;
+        }
+    }
+
     let mut interpreter = Interpreter::new();
-    match interpreter.interpret(statements) {
-        Ok(_) => {},
+    match interpreter.interpret(ast) {
+        Ok(_) => {}
         Err(e) => {
             eprintln!("An interpreter error occured: {e}")
         }

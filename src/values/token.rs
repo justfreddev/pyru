@@ -2,15 +2,15 @@ use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
-    LParen, RParen, LBrace, RBrace, Comma,
-    Dot, Minus, Plus, Semicolon, FSlash, Asterisk, Incr, Decr,
+    LParen, RParen, LBrace, RBrace, Comma, Dot,
+    Minus, Plus, Semicolon, FSlash, Asterisk, Incr, Decr,
 
     Bang, BangEqual, Equal, EqualEqual,
     Greater,GreaterEqual, Less, LessEqual,
 
     Identifier, String, Num,
 
-    And, Class, Else, False, For, Fun, If, Nil, 
+    And, Class, Def, Else, False, For, If, Null, 
     Or, Print, Return, Super, This, True, Var, While,
 
     Comment,
@@ -73,9 +73,9 @@ impl fmt::Display for TokenType {
             TokenType::Else => write!(f, "Else"),
             TokenType::False => write!(f, "False"),
             TokenType::For => write!(f, "For"),
-            TokenType::Fun => write!(f, "Fun"),
+            TokenType::Def => write!(f, "Def"),
             TokenType::If => write!(f, "If"),
-            TokenType::Nil => write!(f, "Nil"),
+            TokenType::Null => write!(f, "Null"),
             TokenType::Or => write!(f, "Or"),
             TokenType::Print => write!(f, "Print"),
             TokenType::Return => write!(f, "Return"),

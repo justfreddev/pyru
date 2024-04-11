@@ -22,7 +22,6 @@ macro_rules! comparison {
     };
 }
 
-
 #[macro_export]
 macro_rules! alteration {
     ( $self:ident ; $operator:tt ; $name:expr ; $value:expr ) => {
@@ -33,14 +32,14 @@ macro_rules! alteration {
     };
 }
 
-
 #[macro_export]
 macro_rules! getresult {
     ( $result:ident ) => {
         match $result {
             Ok(_) => None,
-            Err(v) => Some(v)
-        }.unwrap()
+            Err(v) => Some(v),
+        }
+        .unwrap()
     };
 }
 
@@ -74,7 +73,7 @@ macro_rules! stmt_visitor {
                 }
             )+
         }
-    
+
         impl Stmt {
             pub fn accept_stmt<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> T {
                 match self {
@@ -101,7 +100,7 @@ macro_rules! expr_visitor {
                 }
             )+
         }
-    
+
         impl Expr {
             pub fn accept_expr<T>(&self, visitor: &mut dyn ExprVisitor<T>) -> T {
                 match self {
