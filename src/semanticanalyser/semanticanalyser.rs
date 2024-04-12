@@ -11,7 +11,7 @@ enum Symbol {
     Ident { initialised: bool },
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 enum FunctionType {
     Function,
     None,
@@ -293,7 +293,6 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
     }
 
     fn visit_function_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
-        // MAY BE RECURSIVE AND BREAK
         match stmt {
             Stmt::Function { name, params, body } => {
                 let sym = Symbol::Ident {
@@ -308,7 +307,9 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 
                 self.begin_scope();
 
+                let is_closure = self.func_type.clone();
                 self.func_type = FunctionType::Function;
+
                 for param in params {
                     let sym = Symbol::Ident {
                         initialised: true,
@@ -327,7 +328,10 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 }
 
                 self.end_scope();
-                self.func_type = FunctionType::None;
+
+                if is_closure != FunctionType::Function {
+                    self.func_type = FunctionType::None;
+                }
 
                 return Ok(());
             }
