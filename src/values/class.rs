@@ -1,9 +1,6 @@
-use std::fmt;
+use std::{collections::HashMap, fmt};
 use crate::{
-    callable::Callable,
-    error::InterpreterError,
-    interpreter::Interpreter,
-    value::Value
+    callable::Callable, error::InterpreterError, interpreter::Interpreter, token::Token, value::Value
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -26,12 +23,24 @@ impl Callable for Klass {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Instance {
-    class: Klass
+    class: Klass,
+    fields: HashMap<String, Value>
 }
 
 impl Instance {
     pub fn new(class: Klass) -> Self {
-        return Self { class };
+        return Self { class, fields: HashMap::<String, Value>::new() };
+    }
+
+    pub fn get(&self, name: Token) -> Result<Value, InterpreterError> {
+        if self.fields.contains_key(&name.lexeme.clone()) {
+            match self.fields.get(&name.lexeme.clone()) {
+                Some(v) => return Ok(v.clone()),
+                None => {}
+            }
+        }
+
+        return Err(InterpreterError::UndefinedProperty { name: name.lexeme.clone() });
     }
 }
 

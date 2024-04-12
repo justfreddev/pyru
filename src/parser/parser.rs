@@ -462,6 +462,9 @@ impl Parser {
         loop {
             if self.match_token(vec![&TokenType::LParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(vec![&TokenType::Dot]) {
+                let name = self.consume(TokenType::Identifier, "ExpectedPropertyName")?;
+                expr = Expr::Get { object: Box::new(expr), name };
             } else {
                 break;
             }
@@ -652,7 +655,7 @@ impl Parser {
                     lexeme: token.lexeme,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedSemicolonAfterVariableDeclaration" => {
                 let token = self.peek().clone();
                 Err(ParserError::ExpectedSemicolonAfterVariableDeclaration {
@@ -660,7 +663,7 @@ impl Parser {
                     lexeme: token.lexeme,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedLParenAfterFor" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedLParenAfterFor {
@@ -668,7 +671,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedSemiColonAfterForCondition" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedSemiColonAfterForCondition {
@@ -676,7 +679,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedRParenAfterForClauses" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedRParenAfterForClauses {
@@ -684,7 +687,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedLParenAfterIf" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedLParenAfterIf {
@@ -692,7 +695,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedLParenAfterCondition" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedLParenAfterCondition {
@@ -700,7 +703,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedSemicolonAfterPrintValue" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedSemicolonAfterPrintValue {
@@ -708,7 +711,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedSemicolonAfterReturnValue" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedSemicolonAfterReturnValue {
@@ -716,7 +719,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedLParenAfterWhile" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedLParenAfterWhile {
@@ -724,7 +727,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedRBraceAfterBlock" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedRBraceAfterBlock {
@@ -732,7 +735,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedRParenAfterArguments" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedRParenAfterArguments {
@@ -740,7 +743,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedRParenAfterExpression" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedRParenAfterExpression {
@@ -748,7 +751,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedExpression" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedExpression {
@@ -756,7 +759,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedFunctionName" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedFunctionName {
@@ -764,7 +767,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedLParenAfterFunctionName" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedLParenAfterFunctionName {
@@ -772,7 +775,7 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
-            }
+            },
             "ExpectedParameterName" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedParameterName {
@@ -780,7 +783,31 @@ impl Parser {
                     end: token.end,
                     line: token.line,
                 })
+            },
+            "ExpectLBraceBeforeClassBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectLBraceBeforeClassBody {
+                    start: token.start,
+                    end: token.end,
+                    line: token.line,
+                })
+            },
+            "ExpectRBraceAfterBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectRBraceAfterBody {
+                    start: token.start,
+                    end: token.end,
+                    line: token.line,
+                })
             }
+            "ExpectedPropertyName" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedPropertyName {
+                    start: token.start,
+                    end: token.end,
+                    line: token.line,
+                })
+            },
             _ => Err(ParserError::Unknown),
         }
     }

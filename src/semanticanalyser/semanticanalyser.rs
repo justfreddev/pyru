@@ -155,6 +155,26 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
         }
     }
 
+    fn visit_get_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::Get { object, name } => {
+                object.accept_expr(self)?;
+
+                if self.check_declared(&name.lexeme) {
+                    return Ok(());
+                }
+
+                return Err(SemanticAnalyserError::ObjectNotFound {
+                    object: name.lexeme.clone(),
+                });
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "get".to_string(),
+            }),
+        }
+    }
+
     fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
             Expr::Grouping { expression } => {
@@ -216,7 +236,7 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 return Err(SemanticAnalyserError::VariableNotFound {
                     name: name.lexeme.clone(),
                 });
-            }
+            },
             _ => return Err(SemanticAnalyserError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "var".to_string(),
@@ -247,7 +267,32 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             }
         }
     }
+    
+    fn visit_class_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
+        match stmt {
+            Stmt::Class { name, methods } => {
+                if self.check_declared(&name.lexeme) {
+                    return Err(SemanticAnalyserError::ClassAlreadyDefined)
+                }
 
+                let sym = Symbol::Ident { initialised: true };
+                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
+
+                for method in methods {
+                    method.accept_stmt(self)?;
+                }
+
+                return Ok(());
+            },
+            _ => {
+                return Err(SemanticAnalyserError::DifferentStatement {
+                    stmt: stmt.clone(),
+                    expected: "class".to_string(),
+                });
+            }
+        }
+    }
+    
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Expression { expression } => {
@@ -438,31 +483,6 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 return Err(SemanticAnalyserError::DifferentStatement {
                     stmt: stmt.clone(),
                     expected: "while".to_string(),
-                });
-            }
-        }
-    }
-    
-    fn visit_class_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
-        match stmt {
-            Stmt::Class { name, methods } => {
-                if self.check_declared(&name.lexeme) {
-                    return Err(SemanticAnalyserError::ClassAlreadyDefined)
-                }
-
-                let sym = Symbol::Ident { initialised: true };
-                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
-
-                for method in methods {
-                    method.accept_stmt(self)?;
-                }
-
-                return Ok(());
-            },
-            _ => {
-                return Err(SemanticAnalyserError::DifferentStatement {
-                    stmt: stmt.clone(),
-                    expected: "class".to_string(),
                 });
             }
         }

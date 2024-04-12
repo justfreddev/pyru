@@ -126,10 +126,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
     fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Alteration { name, alteration_type } => {
-                let curr_value = match self.environment.borrow().get(name.clone()) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let curr_value = self.environment.borrow().get(name.clone())?;
 
                 match alteration_type {
                     TokenType::Incr => {
@@ -141,37 +138,34 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     _ => return Err(InterpreterError::ExpectedAlterationToken),
                 }
             }
-            _ => return Err(InterpreterError::ExpectedAlterationExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "alteration".to_string(),
+            }),
         }
     }
 
     fn visit_assign_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Assign { name, value } => {
-                let value = match self.evaluate(value) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let value = self.evaluate(value)?;
 
                 return self.environment
                     .borrow_mut()
                     .assign(name.clone(), value.clone());
             }
-            _ => return Err(InterpreterError::ExpectedAssignmentExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "assign".to_string(),
+            }),
         }
     }
 
     fn visit_binary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Binary { left, operator, right } => {
-                let left = match self.evaluate(&left) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
-                let right = match self.evaluate(&right) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let left = self.evaluate(&left)?;
+                let right = self.evaluate(&right)?;
 
                 match operator.token_type {
                     TokenType::Greater => {
@@ -221,25 +215,22 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     _ => return Err(InterpreterError::ExpectedValidBinaryOperator),
                 }
             }
-            _ => return Err(InterpreterError::ExpectedBinaryExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "binary".to_string(),
+            }),
         }
     }
 
     fn visit_call_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Call { callee, paren: _, arguments } => {
-                let callee = match self.evaluate(callee) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let callee = self.evaluate(callee)?;
 
                 let mut args: Vec<Value> = Vec::new();
 
                 for argument in arguments {
-                    let arg = match self.evaluate(argument) {
-                        Ok(v) => v,
-                        Err(e) => return Err(e),
-                    };
+                    let arg = self.evaluate(argument)?;
                     args.push(arg);
                 }
 
@@ -266,31 +257,37 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     _ => return Err(InterpreterError::ExpectedFunctionOrClass),
                 }
             }
-            _ => return Err(InterpreterError::ExpectedCallExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "call".to_string(),
+            }),
         }
     }
 
     fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Grouping { expression } => return self.evaluate(expression),
-            _ => return Err(InterpreterError::ExpectedGroupExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "group".to_string(),
+            }),
         }
     }
 
     fn visit_literal_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Literal { value } => return Ok(Value::Literal(value.clone())),
-            _ => return Err(InterpreterError::ExpectedLiteralValue),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "literal".to_string(),
+            }),
         }
     }
 
     fn visit_logical_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Logical { left, operator, right } => {
-                let left = match self.evaluate(left) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let left = self.evaluate(left)?;
 
                 if operator.token_type == TokenType::Or {
                     match self.is_truthy(&left) {
@@ -314,24 +311,27 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
                 return self.evaluate(right);
             }
-            _ => return Err(InterpreterError::ExpectedLogicalExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "logical".to_string(),
+            }),
         }
     }
 
     fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Var { name } => return self.environment.borrow().get(name.clone()),
-            _ => return Err(InterpreterError::ExpectedVariableExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "variable".to_string(),
+            }),
         }
     }
 
     fn visit_unary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Unary { operator, right } => {
-                let right = match self.evaluate(right) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
+                let right = self.evaluate(right)?;
 
                 match operator.token_type {
                     TokenType::Bang => match self.is_truthy(&right) {
@@ -352,7 +352,30 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     _ => return Err(InterpreterError::ExpectedMinus),
                 }
             }
-            _ => return Err(InterpreterError::ExpectedUnaryExpression),
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "unary".to_string(),
+            }),
+        }
+    }
+    
+    fn visit_get_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::Get { object, name } => {
+                let object = self.evaluate(object)?;
+
+                if let Value::Instance(i) = object {
+                    return i.get(name.clone());
+                }
+
+                return Err(InterpreterError::OnlyInstancesHaveProperties {
+                    name: name.lexeme.clone()
+                });
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "get".to_string(),
+            }),
         }
     }
 }
@@ -370,10 +393,32 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     Ok(_) => {}
                     Err(r) => return Err(Ok(r)?)
                 };
-
+                
                 return Ok(());
-            }
-            _ => return Err(Err(InterpreterError::ExpectedBlockStatement)),
+            },
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "block".to_string(),
+            })),
+        }
+    }
+
+    fn visit_class_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::Class { name, .. } => {
+                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Literal(LiteralType::Null));
+                
+                let class = Value::Class(Klass::new(name.lexeme.clone()));
+
+                return match self.environment.borrow_mut().assign(name.clone(), class) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(Err(e)),
+                };
+            },
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "class".to_string(),
+            })),
         }
     }
 
@@ -385,7 +430,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     Err(e) => return Err(Err(e)),
                 }
             }
-            _ => return Err(Err(InterpreterError::ExpectedExpressionStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "expression".to_string(),
+            })),
         }
     }
 
@@ -430,7 +478,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::ExpectedForStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "for".to_string(),
+            })),
         }
     }
 
@@ -447,7 +498,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::ExpectedFunctionStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "function".to_string(),
+            })),
         }
     }
 
@@ -481,7 +535,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::ExpectedIfStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "if".to_string(),
+            })),
         }
     }
     
@@ -504,7 +561,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
                 }
             }
-            _ => return Err(Err(InterpreterError::ExpectedPrintStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "print".to_string(),
+            })),
         }
     }
 
@@ -520,7 +580,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 }
                 return Err(Ok(return_value));
             }
-            _ => return Err(Err(InterpreterError::ExpectedReturnStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "return".to_string(),
+            })),
         }
     }
 
@@ -542,7 +605,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::ExpectedVarStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "var".to_string(),
+            })),
         }
     }
 
@@ -580,23 +646,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => Err(Err(InterpreterError::ExpectedWhileStatement)),
-        }
-    }
-    
-    fn visit_class_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::Class { name, .. } => {
-                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Literal(LiteralType::Null));
-                
-                let class = Value::Class(Klass::new(name.lexeme.clone()));
-
-                return match self.environment.borrow_mut().assign(name.clone(), class) {
-                    Ok(_) => Ok(()),
-                    Err(e) => Err(Err(e)),
-                };
-            },
-            _ => Err(Err(InterpreterError::ExpectedClassStatement)),
+            _ => return Err(Err(InterpreterError::DifferentStatement {
+                stmt: stmt.clone(),
+                expected: "while".to_string(),
+            })),
         }
     }
 }

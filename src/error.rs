@@ -187,16 +187,37 @@ pub enum ParserError {
         line: usize,
     },
 
+    #[error("Expected '{{' before class body on line {line}")]
+    ExpectLBraceBeforeClassBody {
+        start: usize,
+        end: usize,
+        line: usize,
+    },
+
+    #[error("Expected '}}' after the body on line {line}")]
+    ExpectRBraceAfterBody {
+        start: usize,
+        end: usize,
+        line: usize,
+    },
+
+    #[error("Expected a property name after '.' on line {line}")]
+    ExpectedPropertyName {
+        start: usize,
+        end: usize,
+        line: usize,
+    },
+
     #[error("Unknown parser error")]
     Unknown,
 }
 
 #[derive(Error, Debug)]
 pub enum SemanticAnalyserError {
-    #[error("The statement provided ({stmt}), was different to the statement expected (expected)")]
+    #[error("The statement provided ({stmt}), was different to the statement expected ({expected})")]
     DifferentStatement { stmt: Stmt, expected: String },
 
-    #[error("The expression provided ({expr}), was different to the expression expected (expected)")]
+    #[error("The expression provided ({expr}), was different to the expression expected ({expected})")]
     DifferentExpression { expr: Expr, expected: String },
 
     #[error("Already a variable named {name} in this scope")]
@@ -204,6 +225,9 @@ pub enum SemanticAnalyserError {
 
     #[error("Couldn't find variable {name}")]
     VariableNotFound { name: String },
+
+    #[error("Couldn't find the object {object}")]
+    ObjectNotFound { object: String },
 
     #[error("Can't return outside of a function")]
     CannotReturnOutsideFunction,
@@ -214,59 +238,11 @@ pub enum SemanticAnalyserError {
 
 #[derive(Error, Debug)]
 pub enum InterpreterError {
-    #[error("Expected a group expression")]
-    ExpectedGroupExpression,
+    #[error("The statement provided ({stmt}), was different to the statement expected ({expected})")]
+    DifferentStatement { stmt: Stmt, expected: String },
 
-    #[error("Expected a unary expression")]
-    ExpectedUnaryExpression,
-
-    #[error("Expected a binary expression")]
-    ExpectedBinaryExpression,
-
-    #[error("Expected a variable expression")]
-    ExpectedVariableExpression,
-
-    #[error("Expected an assignment expression")]
-    ExpectedAssignmentExpression,
-
-    #[error("Expected a logical expression")]
-    ExpectedLogicalExpression,
-
-    #[error("Expected an alteration expression")]
-    ExpectedAlterationExpression,
-
-    #[error("Expected a call expression")]
-    ExpectedCallExpression,
-
-    #[error("Expected an expression statement")]
-    ExpectedExpressionStatement,
-
-    #[error("Expected a print statement")]
-    ExpectedPrintStatement,
-
-    #[error("Expected a var statement")]
-    ExpectedVarStatement,
-
-    #[error("Expected a block statement")]
-    ExpectedBlockStatement,
-
-    #[error("Expected an if statement")]
-    ExpectedIfStatement,
-
-    #[error("Expected a while statement")]
-    ExpectedWhileStatement,
-
-    #[error("Expected a for statement")]
-    ExpectedForStatement,
-
-    #[error("Expected a function statement")]
-    ExpectedFunctionStatement,
-
-    #[error("Expected a return statement")]
-    ExpectedReturnStatement,
-
-    #[error("Expected a class statement")]
-    ExpectedClassStatement,
+    #[error("The expression provided ({expr}), was different to the expected ({expected})")]
+    DifferentExpression { expr: Expr, expected: String },
 
     #[error("Expected a literal value")]
     ExpectedLiteralValue,
@@ -308,4 +284,10 @@ pub enum InterpreterError {
 
     #[error("Expected function declaration to be a function statement")]
     ExpectedFunctionStatementForDeclaration,
+
+    #[error("Only instances have properties ({name})")]
+    OnlyInstancesHaveProperties { name: String },
+
+    #[error("Undefined property '{name}'")]
+    UndefinedProperty { name: String },
 }

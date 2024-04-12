@@ -27,6 +27,10 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Expr>,
     },
+    Get {
+        object: Box<Expr>,
+        name: Token
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -61,6 +65,7 @@ impl fmt::Display for Expr {
                 return write!(f, "Call({callee} {paren} {arguments:?})");
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
+            Expr::Get { object, name } => return write!(f, "Get({object}.{name})"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
             },
@@ -71,4 +76,4 @@ impl fmt::Display for Expr {
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Grouping, Literal, Logical, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Get, Grouping, Literal, Logical, Unary, Var);
