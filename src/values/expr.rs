@@ -42,6 +42,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Set {
+        object: Box<Expr>,
+        name: Token,
+        value: Box<Expr>,
+    },
     Unary {
         operator: Token,
         right: Box<Expr>,
@@ -66,14 +71,15 @@ impl fmt::Display for Expr {
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
             Expr::Get { object, name } => return write!(f, "Get({object}.{name})"),
+            Expr::Literal { value } => return write!(f, "Literal({value})"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
             },
-            Expr::Literal { value } => return write!(f, "Literal({value})"),
+            Expr::Set { object, name, value } => write!(f, "Set({object}.{name} = {value})"),
             Expr::Unary { operator, right } => return write!(f, "Unary({operator} {right})"),
             Expr::Var { name } => return write!(f, "Var({name})"),
         }
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Get, Grouping, Literal, Logical, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Get, Grouping, Literal, Logical, Set, Unary, Var);

@@ -42,6 +42,13 @@ impl Instance {
 
         return Err(InterpreterError::UndefinedProperty { name: name.lexeme.clone() });
     }
+
+    pub fn set(&mut self, name: Token, value: Value) -> Result<Value, InterpreterError> {
+        match self.fields.insert(name.lexeme.clone(), value) {
+            Some(v) => Ok(v),
+            None => Err(InterpreterError::UndefinedField { name: name.lexeme.clone() })
+        }
+    }
 }
 
 impl fmt::Display for Klass {

@@ -314,9 +314,7 @@ impl Parser {
                     });
                 }
             }
-        }
-
-        if self.match_token(vec![&TokenType::Equal]) {
+        } else if self.match_token(vec![&TokenType::Equal]) {
             let value = self.assignment()?;
 
             match expr {
@@ -335,6 +333,8 @@ impl Parser {
                     });
                 }
             }
+        } else if let Expr::Set { object, name, value } = &expr {
+            return Ok(Expr::Set { object: object.clone(), name: name.clone(), value: value.clone() });
         }
 
         return Ok(expr);

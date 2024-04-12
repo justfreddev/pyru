@@ -264,6 +264,26 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
+    fn visit_get_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::Get { object, name } => {
+                let object = self.evaluate(object)?;
+
+                if let Value::Instance(i) = object {
+                    return i.get(name.clone());
+                }
+
+                return Err(InterpreterError::OnlyInstancesHaveProperties {
+                    name: name.lexeme.clone()
+                });
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "get".to_string(),
+            }),
+        }
+    }
+
     fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Grouping { expression } => return self.evaluate(expression),
@@ -318,12 +338,22 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_set_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Var { name } => return self.environment.borrow().get(name.clone()),
+            Expr::Set { object, name, value } => {
+                let object = self.evaluate(object)?;
+
+                return match object {
+                    Value::Instance(mut instance) => {
+                        let value = self.evaluate(value)?;
+                        return instance.set(name.clone(), value);
+                    },
+                    _ => Err(InterpreterError::OnlyInstancesHaveFields { name: name.lexeme.clone() })
+                }
+            },
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
-                expected: "variable".to_string(),
+                expected: "set".to_string(),
             }),
         }
     }
@@ -358,23 +388,13 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
             }),
         }
     }
-    
-    fn visit_get_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+
+    fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Get { object, name } => {
-                let object = self.evaluate(object)?;
-
-                if let Value::Instance(i) = object {
-                    return i.get(name.clone());
-                }
-
-                return Err(InterpreterError::OnlyInstancesHaveProperties {
-                    name: name.lexeme.clone()
-                });
-            },
+            Expr::Var { name } => return self.environment.borrow().get(name.clone()),
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
-                expected: "get".to_string(),
+                expected: "variable".to_string(),
             }),
         }
     }

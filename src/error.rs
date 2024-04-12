@@ -290,4 +290,10 @@ pub enum InterpreterError {
 
     #[error("Undefined property '{name}'")]
     UndefinedProperty { name: String },
+
+    #[error("Only instances have fields ({name})")]
+    OnlyInstancesHaveFields { name: String },
+
+    #[error("Undefined field '{name}'")]
+    UndefinedField { name: String },
 }

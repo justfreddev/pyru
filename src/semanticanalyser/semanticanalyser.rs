@@ -160,7 +160,7 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             Expr::Get { object, name } => {
                 object.accept_expr(self)?;
 
-                if self.check_declared(&name.lexeme) {
+                if !self.check_declared(&name.lexeme) {
                     return Ok(());
                 }
 
@@ -209,6 +209,27 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             _ => return Err(SemanticAnalyserError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "logical".to_string(),
+            }),
+        }
+    }
+
+    fn visit_set_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::Set { object, name, value } => {
+                object.accept_expr(self)?;
+                value.accept_expr(self)?;
+
+                if !self.check_declared(&name.lexeme) {
+                    return Ok(());
+                }
+
+                return Err(SemanticAnalyserError::ObjectNotFound {
+                    object: name.lexeme.clone(),
+                });
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "set".to_string(),
             }),
         }
     }
