@@ -14,6 +14,7 @@ enum Symbol {
 #[derive(Clone, PartialEq)]
 enum FunctionType {
     Function,
+    Method,
     None,
 }
 
@@ -41,6 +42,7 @@ impl SemanticAnalyser {
 
         return Ok(());
     }
+
 
     fn begin_scope(&mut self) {
         let st: HashMap<String, Symbol> = HashMap::new();
@@ -82,6 +84,57 @@ impl SemanticAnalyser {
         }
 
         return false;
+    }
+
+    fn pass_function(&mut self, stmt: &Stmt, declaration: FunctionType) -> Result<(), SemanticAnalyserError> {
+        match stmt {
+            Stmt::Function { name, params, body } => {
+                let sym = Symbol::Ident { initialised: true };
+                
+                if self.symbol_tables[self.curr].contains_key(&name.lexeme) {
+                    return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
+                        name: name.lexeme.clone(),
+                    });
+                }
+                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
+
+                self.begin_scope();
+
+                let is_closure = self.func_type.clone() == FunctionType::Function;
+                self.func_type = declaration;
+
+                for param in params {
+                    let sym = Symbol::Ident {
+                        initialised: true,
+                    };
+
+                    if self.symbol_tables[self.curr].contains_key(&param.lexeme) {
+                        return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
+                            name: param.lexeme.clone(),
+                        });
+                    }
+                    self.symbol_tables[self.curr].insert(param.lexeme.clone(), sym);
+                }
+
+                for statement in body {
+                    statement.accept_stmt(self)?;
+                }
+
+                self.end_scope();
+
+                if !is_closure {
+                    self.func_type = FunctionType::None;
+                }
+
+                return Ok(());
+            },
+            _ => {
+                return Err(SemanticAnalyserError::DifferentStatement {
+                    stmt: stmt.clone(),
+                    expected: "function".to_string(),
+                })
+            }
+        }
     }
 }
 
@@ -160,7 +213,7 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             Expr::Get { object, name } => {
                 object.accept_expr(self)?;
 
-                if !self.check_declared(&name.lexeme) {
+                if self.check_declared(&name.lexeme) {
                     return Ok(());
                 }
 
@@ -300,7 +353,7 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
 
                 for method in methods {
-                    method.accept_stmt(self)?;
+                    self.pass_function(method, FunctionType::Method)?;
                 }
 
                 return Ok(());
@@ -359,55 +412,7 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
     }
 
     fn visit_function_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
-        match stmt {
-            Stmt::Function { name, params, body } => {
-                let sym = Symbol::Ident {
-                    initialised: true,
-                };
-                if self.symbol_tables[self.curr].contains_key(&name.lexeme) {
-                    return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
-                        name: name.lexeme.clone(),
-                    });
-                }
-                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
-
-                self.begin_scope();
-
-                let is_closure = self.func_type.clone() == FunctionType::Function;
-                self.func_type = FunctionType::Function;
-
-                for param in params {
-                    let sym = Symbol::Ident {
-                        initialised: true,
-                    };
-
-                    if self.symbol_tables[self.curr].contains_key(&param.lexeme) {
-                        return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
-                            name: param.lexeme.clone(),
-                        });
-                    }
-                    self.symbol_tables[self.curr].insert(param.lexeme.clone(), sym);
-                }
-
-                for statement in body {
-                    statement.accept_stmt(self)?;
-                }
-
-                self.end_scope();
-
-                if !is_closure {
-                    self.func_type = FunctionType::None;
-                }
-
-                return Ok(());
-            }
-            _ => {
-                return Err(SemanticAnalyserError::DifferentStatement {
-                    stmt: stmt.clone(),
-                    expected: "function".to_string(),
-                })
-            }
-        }
+        return self.pass_function(stmt, FunctionType::Function);
     }
 
     fn visit_if_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {

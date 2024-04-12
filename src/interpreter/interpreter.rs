@@ -1,7 +1,5 @@
 use std::{
-    cell::RefCell,
-    rc::Rc,
-    time::{SystemTime, UNIX_EPOCH},
+    cell::RefCell, collections::HashMap, rc::Rc, time::{SystemTime, UNIX_EPOCH}
 };
 
 use crate::{
@@ -425,10 +423,28 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
     fn visit_class_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
-            Stmt::Class { name, .. } => {
+            Stmt::Class { name, methods } => {
                 self.environment.borrow_mut().define(name.lexeme.clone(), Value::Literal(LiteralType::Null));
                 
-                let class = Value::Class(Klass::new(name.lexeme.clone()));
+                let mut methods_vec: HashMap<String, Func> = HashMap::new();
+                for method in methods {
+                    match method {
+                        Stmt::Function { name, .. } => {
+                            let function = match Func::new(method.clone(), Rc::clone(&self.environment)) {
+                                Ok(f) => f,
+                                Err(e) => return Err(Err(e))
+                            };
+                            methods_vec.insert(name.lexeme.clone(), function);
+                        },
+                        _ => return Err(Err(InterpreterError::DifferentStatement {
+                            stmt: stmt.clone(),
+                            expected: "function".to_string(),
+                        })),
+                    }
+                    
+                }
+
+                let class = Value::Class(Klass::new(name.lexeme.clone(), methods_vec));
 
                 return match self.environment.borrow_mut().assign(name.clone(), class) {
                     Ok(_) => Ok(()),

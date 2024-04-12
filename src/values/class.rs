@@ -1,17 +1,30 @@
 use std::{collections::HashMap, fmt};
 use crate::{
-    callable::Callable, error::InterpreterError, interpreter::Interpreter, token::Token, value::Value
+    callable::{Callable, Func},
+    error::InterpreterError,
+    interpreter::Interpreter,
+    token::Token,
+    value::Value,
 };
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Klass {
     pub name: String,
-    pub arity: usize
+    pub arity: usize,
+    methods: HashMap<String, Func>
 }
 
 impl Klass {
-    pub fn new(name: String) -> Self {
-        return Self { name, arity: 0 };
+    pub fn new(name: String, methods: HashMap<String, Func>) -> Self {
+        return Self { name, arity: 0, methods };
+    }
+
+    pub fn find_method(&self, name: String) -> Result<Func, InterpreterError> {
+        if self.methods.contains_key(&name) {
+            return Ok(self.methods.get(&name).unwrap().clone());
+        }
+
+        return Err(InterpreterError::UndefinedProperty { name });
     }
 }
 
@@ -24,7 +37,7 @@ impl Callable for Klass {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Instance {
     class: Klass,
-    fields: HashMap<String, Value>
+    fields: HashMap<String, Value>,
 }
 
 impl Instance {
@@ -40,7 +53,8 @@ impl Instance {
             }
         }
 
-        return Err(InterpreterError::UndefinedProperty { name: name.lexeme.clone() });
+        let method = self.class.find_method(name.lexeme)?;
+        return Ok(Value::Function(method));
     }
 
     pub fn set(&mut self, name: Token, value: Value) -> Result<Value, InterpreterError> {
