@@ -49,42 +49,33 @@ impl fmt::Display for Stmt {
         match self {
             Stmt::Block { statements } => write!(f, "Block({statements:?}"),
             Stmt::Expression { expression } => write!(f, "Expression({expression})"),
-            Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
+            Stmt::For { initializer, condition, increment, body } => {
+                return write!(f, "For({initializer:?} {condition} {increment:?} {body})");
+            },
+            Stmt::Function { name, params, body } => {
+                return write!(f, "Function({name} {params:?} {body:?})")
+            },
+            Stmt::If { condition, then_branch, else_branch } => {
                 if else_branch.is_some() {
-                    write!(
+                    return write!(
                         f,
                         "If({condition} {then_branch} {})",
                         else_branch.as_ref().unwrap()
-                    )
+                    );
                 } else {
-                    write!(f, "If({condition} {then_branch})")
+                    return write!(f, "If({condition} {then_branch})");
                 }
-            }
+            },
             Stmt::Print { expression } => write!(f, "Print({expression})"),
+            Stmt::Return { keyword: _, value } => return write!(f, "Return({value:?})"),
             Stmt::Var { name, initializer } => {
                 if initializer.is_some() {
-                    write!(f, "Var({name} {}", initializer.as_ref().unwrap())
+                    return write!(f, "Var({name} {}", initializer.as_ref().unwrap());
                 } else {
-                    write!(f, "Var({name})")
+                    return write!(f, "Var({name})");
                 }
             }
-            Stmt::While { condition, body } => write!(f, "While({condition} {body})"),
-            Stmt::Function { name, params, body } => {
-                write!(f, "Function({name} {params:?} {body:?})")
-            }
-            Stmt::For {
-                initializer,
-                condition,
-                increment,
-                body,
-            } => {
-                write!(f, "For({initializer:?} {condition} {increment:?} {body})")
-            }
-            Stmt::Return { keyword: _, value } => write!(f, "Return({value:?})"),
+            Stmt::While { condition, body } => return write!(f, "While({condition} {body})"),
         }
     }
 }

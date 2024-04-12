@@ -39,7 +39,7 @@ impl GlobalEnvironment {
             "clock".to_string(),
             Rc::new(RefCell::new(Value::NativeFunction(clock))),
         );
-        Self { values }
+        return Self { values };
     }
 }
 
@@ -49,10 +49,10 @@ impl Environment for GlobalEnvironment {
     }
 
     fn get(&self, name: Token) -> Result<Value, InterpreterError> {
-        match self.values.get(&name.lexeme) {
-            Some(v) => return Ok(v.borrow().clone()),
+        return match self.values.get(&name.lexeme) {
+            Some(v) => Ok(v.borrow().clone()),
             _ => {
-                return Err(InterpreterError::UndefinedVariable {
+                Err(InterpreterError::UndefinedVariable {
                     name: name.lexeme,
                     start: name.start,
                     end: name.end,
@@ -69,12 +69,12 @@ impl Environment for GlobalEnvironment {
             return Ok(value);
         }
 
-        Err(InterpreterError::UndefinedVariable {
+        return Err(InterpreterError::UndefinedVariable {
             name: name.lexeme,
             start: name.start,
             end: name.end,
             line: name.line,
-        })
+        });
     }
 }
 
@@ -86,10 +86,10 @@ pub struct LocalEnvironment {
 
 impl LocalEnvironment {
     pub fn new(enclosing: Option<Rc<RefCell<dyn Environment>>>) -> Self {
-        Self {
+        return Self {
             values: HashMap::new(),
             enclosing,
-        }
+        };
     }
 }
 
@@ -99,20 +99,21 @@ impl Environment for LocalEnvironment {
     }
 
     fn get(&self, name: Token) -> Result<Value, InterpreterError> {
-        match self.values.get(&name.lexeme) {
-            Some(v) => return Ok(v.borrow().clone()),
+        return match self.values.get(&name.lexeme) {
+            Some(v) => Ok(v.borrow().clone()),
             None => {
                 if let Some(enclosing) = &self.enclosing {
                     return enclosing.borrow().get(name);
+                } else {
+                    return Err(InterpreterError::UndefinedVariable {
+                        name: name.lexeme,
+                        start: name.start,
+                        end: name.end,
+                        line: name.line,
+                    });
                 }
             }
-        }
-        return Err(InterpreterError::UndefinedVariable {
-            name: name.lexeme,
-            start: name.start,
-            end: name.end,
-            line: name.line,
-        });
+        };
     }
 
     fn assign(&mut self, name: Token, value: Value) -> Result<Value, InterpreterError> {
@@ -125,23 +126,24 @@ impl Environment for LocalEnvironment {
         if let Some(enclosing) = &self.enclosing {
             return enclosing.borrow_mut().assign(name.clone(), value);
         }
-        Err(InterpreterError::UndefinedVariable {
+
+        return Err(InterpreterError::UndefinedVariable {
             name: name.lexeme,
             start: name.start,
             end: name.end,
             line: name.line,
-        })
+        });
     }
 }
 
 impl fmt::Display for LocalEnvironment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Local(values: {:#?})", self.values)
+        return write!(f, "Local(values: {:#?})", self.values);
     }
 }
 
 impl fmt::Display for GlobalEnvironment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Global(values: {:#?})", self.values)
+        return write!(f, "Global(values: {:#?})", self.values);
     }
 }

@@ -1,15 +1,24 @@
 use thiserror::Error;
 
-use crate::{expr::Expr, stmt::Stmt, token::TokenType};
+use crate::{
+    expr::Expr,
+    stmt::Stmt,
+    token::TokenType,
+};
 
 #[derive(Error, Debug)]
 pub enum LexerError {
     #[error("Unterminated string on line {line}")]
     UnterminatedString { line: usize },
+
     #[error("Unexpected character '{c}' on line {line}")]
     UnexpectedCharacter { c: char, line: usize },
+
     #[error("No more characters left on line {line}")]
     NoCharactersLeft { line: usize },
+
+    #[error("Cannot peek when at the end of the source string on line {line}")]
+    CannotPeekAtTheEnd { line: usize }
 }
 
 #[derive(Error, Debug)]
@@ -187,9 +196,7 @@ pub enum SemanticAnalyserError {
     #[error("The statement provided ({stmt}), was different to the statement expected (expected)")]
     DifferentStatement { stmt: Stmt, expected: String },
 
-    #[error(
-        "The expression provided ({expr}), was different to the expression expected (expected)"
-    )]
+    #[error("The expression provided ({expr}), was different to the expression expected (expected)")]
     DifferentExpression { expr: Expr, expected: String },
 
     #[error("Already a variable named {name} in this scope")]
@@ -275,7 +282,7 @@ pub enum InterpreterError {
         name: String,
         start: usize,
         end: usize,
-        line: usize,
+        line: usize
     },
 
     #[error("Expected an alteration token")]

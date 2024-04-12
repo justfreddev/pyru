@@ -9,16 +9,34 @@ use crate::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
+    Alteration {
+        name: Token,
+        alteration_type: TokenType,
+    },
+    Assign {
+        name: Token,
+        value: Box<Expr>,
+    },
     Binary {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>,
+    },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Expr>,
     },
     Grouping {
         expression: Box<Expr>,
     },
     Literal {
         value: LiteralType,
+    },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
     },
     Unary {
         operator: Token,
@@ -27,55 +45,30 @@ pub enum Expr {
     Var {
         name: Token,
     },
-    Assign {
-        name: Token,
-        value: Box<Expr>,
-    },
-    Logical {
-        left: Box<Expr>,
-        operator: Token,
-        right: Box<Expr>,
-    },
-    Alteration {
-        name: Token,
-        alteration_type: TokenType,
-    },
-    Call {
-        callee: Box<Expr>,
-        paren: Token,
-        arguments: Vec<Expr>,
-    },
 }
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => write!(f, "Binary({left} {operator} {right})"),
-            Expr::Grouping { expression } => write!(f, "Grouping({expression})"),
-            Expr::Literal { value } => write!(f, "Literal({value})"),
-            Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
-            Expr::Var { name } => write!(f, "Var({name})"),
-            Expr::Assign { name, value } => write!(f, "Assign({name} = {value}"),
-            Expr::Logical {
-                left,
-                operator,
-                right,
-            } => write!(f, "Logical({left} {operator} {right})"),
-            Expr::Alteration {
-                name,
-                alteration_type,
-            } => write!(f, "Alteration({name} {alteration_type})"),
-            Expr::Call {
-                callee,
-                paren,
-                arguments: arguements,
-            } => write!(f, "Call({callee} {paren} {arguements:?})"),
+            Expr::Alteration { name, alteration_type } => {
+                return write!(f, "Alteration({name} {alteration_type})");
+            },
+            Expr::Assign { name, value } => return write!(f, "Assign({name} = {value}"),
+            Expr::Binary { left, operator, right } => {
+                return write!(f, "Binary({left} {operator} {right})");
+            },
+            Expr::Call { callee, paren, arguments } => {
+                return write!(f, "Call({callee} {paren} {arguments:?})");
+            },
+            Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
+            Expr::Logical { left, operator, right } => {
+                return write!(f, "Logical({left} {operator} {right})");
+            },
+            Expr::Literal { value } => return write!(f, "Literal({value})"),
+            Expr::Unary { operator, right } => return write!(f, "Unary({operator} {right})"),
+            Expr::Var { name } => return write!(f, "Var({name})"),
         }
     }
 }
 
-expr_visitor!(Binary, Grouping, Literal, Unary, Var, Assign, Logical, Alteration, Call);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, Literal, Logical, Unary, Var);

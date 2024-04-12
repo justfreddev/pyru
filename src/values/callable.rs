@@ -28,45 +28,32 @@ pub struct Func {
 impl PartialEq for Func {
     fn eq(&self, other: &Self) -> bool {
         println!("Should never be called");
-        self.name == other.name
+        return self.name == other.name
             && self.arity == other.arity
-            && self.declaration == other.declaration
+            && self.declaration == other.declaration;
     }
 }
 
 impl Func {
-    pub fn new(
-        declaration: Stmt,
-        closure: Rc<RefCell<dyn Environment>>,
-    ) -> Result<Self, InterpreterError> {
+    pub fn new(declaration: Stmt, closure: Rc<RefCell<dyn Environment>>) -> Result<Self, InterpreterError> {
         match &declaration {
-            Stmt::Function {
-                name,
-                params,
-                body: _,
-            } => Ok(Self {
-                name: name.lexeme.clone(),
-                arity: params.len(),
-                declaration,
-                closure,
-            }),
-            _ => Err(InterpreterError::ExpectedFunctionStatementForDeclaration),
+            Stmt::Function { name, params, .. } => {
+                return Ok(Self {
+                    name: name.lexeme.clone(),
+                    arity: params.len(),
+                    declaration,
+                    closure,
+                });
+            },
+            _ => return Err(InterpreterError::ExpectedFunctionStatementForDeclaration),
         }
     }
 }
 
 impl Callable for Func {
-    fn call(
-        &self,
-        interpreter: &mut crate::interpreter::Interpreter,
-        arguments: Vec<Value>,
-    ) -> Result<Value, InterpreterError> {
+    fn call(&self, interpreter: &mut crate::interpreter::Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
         match &self.declaration {
-            Stmt::Function {
-                name: _,
-                params,
-                body,
-            } => {
+            Stmt::Function { name: _, params, body } => {
                 let environment = Rc::new(RefCell::new(LocalEnvironment::new(Some(Rc::clone(
                     &self.closure,
                 )))));
@@ -79,11 +66,8 @@ impl Callable for Func {
 
                 return match interpreter.execute_block(body.clone(), environment) {
                     Ok(_) => Ok(Value::Literal(LiteralType::Null)),
-                    Err(r) => match r {
-                        Ok(v) => Ok(v),
-                        Err(e) => Err(e),
-                    },
-                };
+                    Err(r) => Ok(r?)
+                }
             }
             _ => return Err(InterpreterError::ExpectedDeclarationToBeAFunction),
         }
@@ -102,37 +86,29 @@ pub struct NativeFunc {
 }
 
 impl NativeFunc {
-    pub fn new(
-        name: String,
-        arity: usize,
-        fun: fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>,
-    ) -> Self {
-        Self { name, arity, fun }
+    pub fn new(name: String, arity: usize, fun: fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>) -> Self {
+        return Self { name, arity, fun };
     }
 }
 
 impl Callable for NativeFunc {
-    fn call(
-        &self,
-        interpreter: &mut Interpreter,
-        arguments: Vec<Value>,
-    ) -> Result<Value, InterpreterError> {
-        (self.fun)(interpreter, arguments)
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
+        return (self.fun)(interpreter, arguments);
     }
 
     fn _fn_to_string(&self) -> String {
-        "<native fn>".to_string()
+        return "<native fn>".to_string();
     }
 }
 
 impl fmt::Display for NativeFunc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({}) {{{:?}}}", self.name, self.arity, self.fun)
+        return write!(f, "{}({}) {{{:?}}}", self.name, self.arity, self.fun);
     }
 }
 
 impl fmt::Display for Func {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({}) {{{}}}", self.name, self.arity, self.declaration)
+        return write!(f, "{}({}) {{{}}}", self.name, self.arity, self.declaration);
     }
 }

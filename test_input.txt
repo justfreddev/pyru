@@ -1,6 +1,6 @@
-fun makeCounter() {
+def makeCounter() {
   var i = 0;
-  fun count() {
+  def count() {
     i++;
     print i;
   }
@@ -10,7 +10,8 @@ var counter = makeCounter();
 counter();
 counter();
 
-fun fib(n) {
+
+def fib(n) {
   if (n <= 1) return n;
   return fib(n - 2) + fib(n - 1);
 }
@@ -18,13 +19,15 @@ for (var i = 0; i < 20; i++) {
   print fib(i);
 }
 
-fun recursion(x) {
+
+def recursion(x) {
   if (x == 0) return x;
   recursion(x - 1);
 }
 print recursion(5);
 
-fun add(a, b) {
+
+def add(a, b) {
   return a + b;
 }
 var a = 1;
@@ -32,17 +35,20 @@ for (var i = 0; i < 10; i++) {
   print add(a, i);
 }
 
-fun add(a, b) {
+
+def add(a, b) {
   return a + b;
 }
 print add(1, 2);
 
-fun add(a, b) {
+
+def add(a, b) {
   print a + b;
 }
 add(1, 2);
 
-fun t(a) {
+
+def t(a) {
   print a;
 }
 t(1);

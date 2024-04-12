@@ -27,7 +27,7 @@ fn lex(source: String) -> Vec<Token> {
         Ok(t) => t,
         Err(_) => Vec::new()
     };
-    tokens
+    return tokens;
 }
 
 
@@ -53,7 +53,7 @@ fn test_single_symbols() {
             token!(Greater ; ">" ; "" ; 1 ; 28 ; 29),
             token!(Eof ; "" ; "" ; 1 ; 29 ; 29)
         ]
-    )
+    );
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn test_double_symbols() {
             token!(GreaterEqual ; ">=" ; "" ; 1 ; 15 ; 17),
             token!(Eof ; "" ; "" ; 1 ; 17 ; 17),
         ]
-    )
+    );
 }
 
 #[test]
@@ -93,5 +93,5 @@ fn test_strings() {
             token!(String ; "\"New\n\rline\"" ; "New\n\rline" ; 2 ; 0 ; 11),
             token!(Eof ; "" ; "" ; 2 ; 11 ; 11),
         ]
-    )
+    );
 }

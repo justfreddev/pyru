@@ -92,6 +92,10 @@ impl fmt::Display for TokenType {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Token{{{}, {}, {}, {}, {}, {}}}", self.token_type, self.lexeme, self.literal, self.line, self.start, self.end)
+        return write!(
+            f,
+            "Token{{{}, {}, {}, {}, {}, {}}}",
+            self.token_type, self.lexeme, self.literal, self.line, self.start, self.end,
+        );
     }
 }

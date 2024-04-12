@@ -40,15 +40,15 @@ impl Interpreter {
             .borrow_mut()
             .define("clock".to_string(), Value::NativeFunction(clock));
 
-        Self {
+        return Self {
             globals: Rc::clone(&global),
             environment: Rc::clone(&global) as Rc<RefCell<dyn Environment>>,
-        }
+        };
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), InterpreterError> {
         for stmt in statements {
-            let _ = match self.execute(&stmt) {
+            match self.execute(&stmt) {
                 Ok(()) => {}
                 Err(r) => match r {
                     Ok(_) => {}
@@ -56,25 +56,21 @@ impl Interpreter {
                 },
             };
         }
-        Ok(())
+        return Ok(());
     }
 
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
-        match expr.accept_expr(self) {
+        return match expr.accept_expr(self) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         }
     }
 
     fn execute(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
-        stmt.accept_stmt(self)
+        return stmt.accept_stmt(self);
     }
 
-    pub fn execute_block(
-        &mut self,
-        statements: Vec<Stmt>,
-        environment: Rc<RefCell<LocalEnvironment>>,
-    ) -> StmtResult {
+    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<LocalEnvironment>>) -> StmtResult {
         let previous = Rc::clone(&self.environment);
 
         self.environment = Rc::clone(&environment) as Rc<RefCell<dyn Environment>>;
@@ -92,24 +88,24 @@ impl Interpreter {
             }
         }
         self.environment = previous;
-        Ok(())
+        return Ok(());
     }
 
     fn is_truthy(&mut self, object: &Value) -> Result<bool, InterpreterError> {
         match object {
             Value::Literal(literal) => {
-                Ok(!matches!(literal, LiteralType::Null | LiteralType::False))
+                return Ok(!matches!(literal, LiteralType::Null | LiteralType::False))
             }
-            _ => Err(InterpreterError::ExpectedLiteralValue),
+            _ => return Err(InterpreterError::ExpectedLiteralValue),
         }
     }
 
     fn is_equal(&mut self, a: &Value, b: &Value) -> bool {
-        *a == *b
+        return *a == *b;
     }
 
     fn stringify(&self, object: LiteralType) -> String {
-        match object {
+        return match object {
             LiteralType::Num(n) => {
                 let mut text = n.to_string();
                 if text.ends_with(".0") {
@@ -127,10 +123,7 @@ impl Interpreter {
 impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
     fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Alteration {
-                name,
-                alteration_type,
-            } => {
+            Expr::Alteration { name, alteration_type } => {
                 let curr_value = match self.environment.borrow().get(name.clone()) {
                     Ok(v) => v,
                     Err(e) => return Err(e),
@@ -157,9 +150,10 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     Ok(v) => v,
                     Err(e) => return Err(e),
                 };
-                self.environment
+
+                return self.environment
                     .borrow_mut()
-                    .assign(name.clone(), value.clone())
+                    .assign(name.clone(), value.clone());
             }
             _ => return Err(InterpreterError::ExpectedAssignmentExpression),
         }
@@ -167,11 +161,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
     fn visit_binary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => {
+            Expr::Binary { left, operator, right } => {
                 let left = match self.evaluate(&left) {
                     Ok(v) => v,
                     Err(e) => return Err(e),
@@ -235,11 +225,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
     fn visit_call_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Call {
-                callee,
-                paren: _,
-                arguments,
-            } => {
+            Expr::Call { callee, paren: _, arguments } => {
                 let callee = match self.evaluate(callee) {
                     Ok(v) => v,
                     Err(e) => return Err(e),
@@ -283,25 +269,21 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
     fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Grouping { expression } => self.evaluate(expression),
-            _ => Err(InterpreterError::ExpectedGroupExpression),
+            Expr::Grouping { expression } => return self.evaluate(expression),
+            _ => return Err(InterpreterError::ExpectedGroupExpression),
         }
     }
 
     fn visit_literal_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Literal { value } => return Ok(Value::Literal(value.clone())),
-            _ => Err(InterpreterError::ExpectedLiteralValue),
+            _ => return Err(InterpreterError::ExpectedLiteralValue),
         }
     }
 
     fn visit_logical_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Logical {
-                left,
-                operator,
-                right,
-            } => {
+            Expr::Logical { left, operator, right } => {
                 let left = match self.evaluate(left) {
                     Ok(v) => v,
                     Err(e) => return Err(e),
@@ -327,7 +309,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                     }
                 }
 
-                self.evaluate(right)
+                return self.evaluate(right);
             }
             _ => return Err(InterpreterError::ExpectedLogicalExpression),
         }
@@ -335,8 +317,8 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
     fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Var { name } => self.environment.borrow().get(name.clone()),
-            _ => Err(InterpreterError::ExpectedVariableExpression),
+            Expr::Var { name } => return self.environment.borrow().get(name.clone()),
+            _ => return Err(InterpreterError::ExpectedVariableExpression),
         }
     }
 
@@ -362,7 +344,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                         if let Value::Literal(LiteralType::Num(n)) = right {
                             return Ok(Value::Literal(LiteralType::Num(-n)));
                         }
-                        return Err(InterpreterError::UnableToNegate);
+                        return Err(InterpreterError::UnableToNegate)
                     }
                     _ => return Err(InterpreterError::ExpectedMinus),
                 }
@@ -373,170 +355,44 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 }
 
 impl stmt::StmtVisitor<StmtResult> for Interpreter {
-    fn visit_expression_stmt(
-        &mut self,
-        stmt: &Stmt,
-    ) -> Result<(), Result<Value, InterpreterError>> {
-        match stmt {
-            Stmt::Expression { expression } => {
-                return match self.evaluate(&expression.clone()) {
-                    Ok(_) => Ok(()), // MAY NEED TO CHANGE
-                    Err(e) => return Err(Err(e)),
-                };
-            }
-            _ => return Err(Err(InterpreterError::ExpectedExpressionStatement)),
-        }
-    }
-
-    fn visit_print_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::Print { expression } => {
-                let value = match self.evaluate(expression) {
-                    Ok(v) => v,
-                    Err(e) => return Err(Err(e)),
-                };
-                match value {
-                    Value::Literal(literal) => {
-                        println!("{}", self.stringify(literal));
-                        Ok(())
-                    }
-                    _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
-                }
-            }
-            _ => return Err(Err(InterpreterError::ExpectedPrintStatement)),
-        }
-    }
-
-    fn visit_var_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::Var { name, initializer } => {
-                let mut value = Value::Literal(LiteralType::Null);
-
-                if let Some(initializer_expr) = initializer {
-                    value = match self.evaluate(initializer_expr) {
-                        Ok(v) => v,
-                        Err(e) => return Err(Err(e)),
-                    };
-                }
-                self.environment
-                    .borrow_mut()
-                    .define(name.lexeme.clone(), value);
-                Ok(())
-            }
-            _ => Err(Err(InterpreterError::ExpectedVarStatement)),
-        }
-    }
-
     fn visit_block_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::Block { statements } => {
-                let _ = match self.execute_block(
+                match self.execute_block(
                     statements.clone(),
                     Rc::new(RefCell::new(LocalEnvironment::new(Some(
                         self.environment.clone(),
                     )))),
                 ) {
                     Ok(_) => {}
-                    Err(r) => match r {
-                        Ok(v) => return Err(Ok(v)),
-                        Err(e) => return Err(Err(e)),
-                    },
+                    Err(r) => return Err(Ok(r)?)
                 };
-                Ok(())
+
+                return Ok(());
             }
-            _ => Err(Err(InterpreterError::ExpectedBlockStatement)),
+            _ => return Err(Err(InterpreterError::ExpectedBlockStatement)),
         }
     }
 
-    fn visit_if_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+    fn visit_expression_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
-            Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                let condition_evaluation = match self.evaluate(&condition) {
-                    Ok(v) => v,
+            Stmt::Expression { expression } => {
+                match self.evaluate(&expression.clone()) {
+                    Ok(_) => return Ok(()), // MAY NEED TO CHANGE
                     Err(e) => return Err(Err(e)),
-                };
-
-                let condition_evaluation_result = match self.is_truthy(&condition_evaluation) {
-                    Ok(v) => v,
-                    Err(e) => return Err(Err(e)),
-                };
-                if condition_evaluation_result {
-                    let _ = match self.execute(&then_branch) {
-                        Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
-                    };
-                } else if else_branch.is_some() {
-                    let _ = match self.execute(&else_branch.as_ref().unwrap()) {
-                        Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
-                    };
                 }
-                Ok(())
             }
-            _ => return Err(Err(InterpreterError::ExpectedIfStatement)),
-        }
-    }
-
-    fn visit_while_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::While { condition, body } => {
-                let body = *body.clone();
-                let mut condition_evaluation = match self.evaluate(condition) {
-                    Ok(v) => v,
-                    Err(e) => return Err(Err(e)),
-                };
-                let mut condition_result = match self.is_truthy(&condition_evaluation) {
-                    Ok(v) => v,
-                    Err(e) => return Err(Err(e)),
-                };
-                while condition_result {
-                    let _ = match self.execute(&body) {
-                        Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
-                    };
-                    condition_evaluation = match self.evaluate(condition) {
-                        Ok(v) => v,
-                        Err(e) => return Err(Err(e)),
-                    };
-                    condition_result = match self.is_truthy(&condition_evaluation) {
-                        Ok(v) => v,
-                        Err(e) => return Err(Err(e)),
-                    };
-                }
-                Ok(())
-            }
-            _ => return Err(Err(InterpreterError::ExpectedWhileStatement)),
+            _ => return Err(Err(InterpreterError::ExpectedExpressionStatement)),
         }
     }
 
     fn visit_for_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
-            Stmt::For {
-                initializer,
-                condition,
-                increment,
-                body,
-            } => {
+            Stmt::For { initializer, condition, increment, body } => {
                 if initializer.is_some() {
-                    let _ = match self.execute(&initializer.as_ref().unwrap()) {
+                    match self.execute(initializer.as_ref().unwrap()) {
                         Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
+                        Err(r) => return Err(Ok(r)?)
                     };
                 }
                 let mut condition_evaluation = match self.evaluate(condition) {
@@ -547,17 +403,14 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
                 };
-
+                
                 while condition_result {
-                    let _ = match self.execute(&body) {
+                    match self.execute(body) {
                         Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
+                        Err(r) => return Err(Ok(r)?)
                     };
                     if increment.is_some() {
-                        let _ = match self.evaluate(&increment.as_ref().unwrap()) {
+                        let _ = match self.evaluate(increment.as_ref().unwrap()) {
                             Ok(v) => v,
                             Err(e) => return Err(Err(e)),
                         };
@@ -571,7 +424,8 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                         Err(e) => return Err(Err(e)),
                     };
                 }
-                Ok(())
+
+                return Ok(());
             }
             _ => return Err(Err(InterpreterError::ExpectedForStatement)),
         }
@@ -579,11 +433,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
     fn visit_function_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
-            Stmt::Function {
-                name,
-                params: _,
-                body: _,
-            } => {
+            Stmt::Function { name, .. } => {
                 let function = match Func::new(stmt.clone(), self.environment.clone()) {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
@@ -591,9 +441,63 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 self.environment
                     .borrow_mut()
                     .define(name.lexeme.clone(), Value::Function(function));
-                Ok(())
+
+                return Ok(());
             }
-            _ => Err(Err(InterpreterError::ExpectedFunctionStatement)),
+            _ => return Err(Err(InterpreterError::ExpectedFunctionStatement)),
+        }
+    }
+
+    fn visit_if_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::If { condition, then_branch, else_branch } => {
+                let condition_evaluation = match self.evaluate(condition) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e)),
+                };
+
+                let condition_evaluation_result = match self.is_truthy(&condition_evaluation) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e)),
+                };
+
+                if condition_evaluation_result {
+                    match self.execute(&then_branch) {
+                        Ok(_) => {}
+                        Err(r) => match r {
+                            Ok(v) => return Err(Ok(v)),
+                            Err(e) => return Err(Err(e)),
+                        },
+                    };
+                } else if else_branch.is_some() {
+                    match self.execute(&else_branch.as_ref().unwrap()) {
+                        Ok(_) => {}
+                        Err(r) => return Err(Ok(r)?)
+                    };
+                }
+
+                return Ok(());
+            }
+            _ => return Err(Err(InterpreterError::ExpectedIfStatement)),
+        }
+    }
+    
+    fn visit_print_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::Print { expression } => {
+                let value = match self.evaluate(expression) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e)),
+                };
+                match value {
+                    Value::Literal(literal) => {
+                        println!("{}", self.stringify(literal));
+                        return Ok(());
+                    }
+                    _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
+                }
+            }
+            _ => return Err(Err(InterpreterError::ExpectedPrintStatement)),
         }
     }
 
@@ -602,14 +506,74 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
             Stmt::Return { keyword: _, value } => {
                 let mut return_value = Value::Literal(LiteralType::Null);
                 if value.is_some() {
-                    return_value = match self.evaluate(&value.as_ref().unwrap()) {
+                    return_value = match self.evaluate(value.as_ref().unwrap()) {
                         Ok(v) => v,
                         Err(e) => return Err(Err(e)),
                     };
                 }
-                Err(Ok(return_value))
+                return Err(Ok(return_value));
             }
             _ => return Err(Err(InterpreterError::ExpectedReturnStatement)),
+        }
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::Var { name, initializer } => {
+                let mut value = Value::Literal(LiteralType::Null);
+                
+                if let Some(initializer_expr) = initializer {
+                    value = match self.evaluate(initializer_expr) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e)),
+                    };
+                }
+                
+                self.environment
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), value);
+
+                return Ok(());
+            }
+            _ => return Err(Err(InterpreterError::ExpectedVarStatement)),
+        }
+    }
+
+    fn visit_while_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::While { condition, body } => {
+                let body = *body.clone();
+
+                let mut condition_evaluation = match self.evaluate(condition) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e)),
+                };
+
+                let mut condition_result = match self.is_truthy(&condition_evaluation) {
+                    Ok(v) => v,
+                    Err(e) => return Err(Err(e)),
+                };
+
+                while condition_result {
+                    match self.execute(&body) {
+                        Ok(_) => {}
+                        Err(r) => return Err(Ok(r)?)
+                    };
+
+                    condition_evaluation = match self.evaluate(condition) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e)),
+                    };
+
+                    condition_result = match self.is_truthy(&condition_evaluation) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e)),
+                    };
+                }
+
+                return Ok(());
+            }
+            _ => Err(Err(InterpreterError::ExpectedWhileStatement)),
         }
     }
 }
