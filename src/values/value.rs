@@ -1,12 +1,14 @@
 use std::fmt;
 
-use crate::callable::{Func, NativeFunc};
+use crate::{callable::{Func, NativeFunc}, class::{Instance, Klass}};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-    Literal(LiteralType),
+    Class(Klass),
     Function(Func),
-    NativeFunction(NativeFunc)
+    Instance(Instance),
+    Literal(LiteralType),
+    NativeFunction(NativeFunc),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -23,9 +25,11 @@ pub enum LiteralType {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
-            Value::Literal(literal) => write!(f, "Literal({literal})"),
+            Value::Class(cls) => write!(f, "Class({cls})"),
             Value::Function(fun) => write!(f, "Function({fun})"),
-            Value::NativeFunction(nf) => write!(f, "NativeFunction({nf})")
+            Value::Instance(instance) => write!(f, "Instance({instance})"),
+            Value::Literal(literal) => write!(f, "Literal({literal})"),
+            Value::NativeFunction(nf) => write!(f, "NativeFunction({nf})"),
         };
     }
 }

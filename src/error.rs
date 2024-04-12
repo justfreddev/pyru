@@ -207,6 +207,9 @@ pub enum SemanticAnalyserError {
 
     #[error("Can't return outside of a function")]
     CannotReturnOutsideFunction,
+
+    #[error("Class has already been defined")]
+    ClassAlreadyDefined,
 }
 
 #[derive(Error, Debug)]
@@ -261,6 +264,9 @@ pub enum InterpreterError {
 
     #[error("Expected a return statement")]
     ExpectedReturnStatement,
+
+    #[error("Expected a class statement")]
+    ExpectedClassStatement,
 
     #[error("Expected a literal value")]
     ExpectedLiteralValue,

@@ -307,7 +307,7 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 
                 self.begin_scope();
 
-                let is_closure = self.func_type.clone();
+                let is_closure = self.func_type.clone() == FunctionType::Function;
                 self.func_type = FunctionType::Function;
 
                 for param in params {
@@ -329,7 +329,7 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 
                 self.end_scope();
 
-                if is_closure != FunctionType::Function {
+                if !is_closure {
                     self.func_type = FunctionType::None;
                 }
 
@@ -438,6 +438,31 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 return Err(SemanticAnalyserError::DifferentStatement {
                     stmt: stmt.clone(),
                     expected: "while".to_string(),
+                });
+            }
+        }
+    }
+    
+    fn visit_class_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
+        match stmt {
+            Stmt::Class { name, methods } => {
+                if self.check_declared(&name.lexeme) {
+                    return Err(SemanticAnalyserError::ClassAlreadyDefined)
+                }
+
+                let sym = Symbol::Ident { initialised: true };
+                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
+
+                for method in methods {
+                    method.accept_stmt(self)?;
+                }
+
+                return Ok(());
+            },
+            _ => {
+                return Err(SemanticAnalyserError::DifferentStatement {
+                    stmt: stmt.clone(),
+                    expected: "class".to_string(),
                 });
             }
         }

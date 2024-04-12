@@ -30,7 +30,15 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Stmt, ParserError> {
-        if self.match_token(vec![&TokenType::Def]) {
+        if self.match_token(vec![&TokenType::Class]) {
+            return match self.class_declaration() {
+                Ok(v) => Ok(v),
+                Err(e) => {
+                    self.synchronize();
+                    Err(e)
+                }
+            }
+        } else if self.match_token(vec![&TokenType::Def]) {
             return match self.function("function") {
                 Ok(v) => Ok(v),
                 Err(e) => {
@@ -49,6 +57,20 @@ impl Parser {
         } else {
             return self.statement();
         }
+    }
+
+    fn class_declaration(&mut self) -> Result<Stmt, ParserError> {
+        let name = self.consume(TokenType::Identifier, "ExpectClassName")?;
+        self.consume(TokenType::LBrace, "ExpectLBraceBeforeClassBody")?;
+
+        let mut methods: Vec<Stmt> = Vec::new();
+        while !self.check(TokenType::RBrace) && !self.is_at_end() {
+            methods.push(self.function("method")?);
+        }
+
+        self.consume(TokenType::RBrace, "ExpectRBraceAfterBody")?;
+
+        return Ok(Stmt::Class { name, methods });
     }
 
     fn function(&mut self, kind: &str) -> Result<Stmt, ParserError> {

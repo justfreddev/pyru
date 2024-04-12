@@ -5,8 +5,10 @@ use std::{
 };
 
 use crate::{
-    alteration, arithmetic,
+    alteration,
+    arithmetic,
     callable::{Callable, Func, NativeFunc},
+    class::Klass,
     comparison,
     enviromnent::{Environment, GlobalEnvironment, LocalEnvironment},
     error::InterpreterError,
@@ -242,6 +244,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                 }
 
                 match callee {
+                    Value::Class(cls) => return cls.call(self, Vec::new()),
                     Value::Function(f) => {
                         if args.len() != f.arity {
                             return Err(InterpreterError::ArgsDifferFromArity {
@@ -260,7 +263,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                         }
                         return nf.call(self, args);
                     }
-                    Value::Literal(_) => return Err(InterpreterError::ExpectedFunctionOrClass),
+                    _ => return Err(InterpreterError::ExpectedFunctionOrClass),
                 }
             }
             _ => return Err(InterpreterError::ExpectedCallExpression),
@@ -493,6 +496,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     Value::Literal(literal) => {
                         println!("{}", self.stringify(literal));
                         return Ok(());
+                    },
+                    Value::Instance(instance) => {
+                        println!("{instance}");
+                        return Ok(());
                     }
                     _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
                 }
@@ -574,6 +581,22 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 return Ok(());
             }
             _ => Err(Err(InterpreterError::ExpectedWhileStatement)),
+        }
+    }
+    
+    fn visit_class_stmt(&mut self, stmt: &Stmt) -> StmtResult {
+        match stmt {
+            Stmt::Class { name, .. } => {
+                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Literal(LiteralType::Null));
+                
+                let class = Value::Class(Klass::new(name.lexeme.clone()));
+
+                return match self.environment.borrow_mut().assign(name.clone(), class) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(Err(e)),
+                };
+            },
+            _ => Err(Err(InterpreterError::ExpectedClassStatement)),
         }
     }
 }

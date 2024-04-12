@@ -9,12 +9,7 @@ use crate::{
 };
 
 pub trait Callable {
-    fn call(
-        &self,
-        interpreter: &mut Interpreter,
-        arguments: Vec<Value>,
-    ) -> Result<Value, InterpreterError>;
-    fn _fn_to_string(&self) -> String;
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError>;
 }
 
 #[derive(Clone, Debug)]
@@ -72,10 +67,6 @@ impl Callable for Func {
             _ => return Err(InterpreterError::ExpectedDeclarationToBeAFunction),
         }
     }
-
-    fn _fn_to_string(&self) -> String {
-        todo!()
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -94,10 +85,6 @@ impl NativeFunc {
 impl Callable for NativeFunc {
     fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
         return (self.fun)(interpreter, arguments);
-    }
-
-    fn _fn_to_string(&self) -> String {
-        return "<native fn>".to_string();
     }
 }
 
