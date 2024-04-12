@@ -1,3 +1,4 @@
+// Prints 1, 2
 def makeCounter() {
   var i = 0;
   def count() {
@@ -11,6 +12,7 @@ counter();
 counter();
 
 
+// Prints out nth fibonacci number up to n=20
 def fib(n) {
   if (n <= 1) return n;
   return fib(n - 2) + fib(n - 1);
@@ -20,13 +22,16 @@ for (var i = 0; i < 20; i++) {
 }
 
 
+// Prints out 5, 4, 3, 2, 1, 0
 def recursion(x) {
+  print x;
   if (x == 0) return x;
   return recursion(x - 1);
 }
-print recursion(5);
+recursion(5);
 
 
+// Prints 1 to 10
 def add(a, b) {
   return a + b;
 }
@@ -36,18 +41,21 @@ for (var i = 0; i < 10; i++) {
 }
 
 
+// Prints 3
 def add(a, b) {
   return a + b;
 }
 print add(1, 2);
 
 
+// Prints 3
 def add(a, b) {
   print a + b;
 }
 add(1, 2);
 
 
+// Prints 3
 def t(a) {
   print a;
 }
