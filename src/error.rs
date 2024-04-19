@@ -208,6 +208,13 @@ pub enum ParserError {
         line: usize,
     },
 
+    #[error("Expected ']' after the values of a list on line {line}")]
+    ExpectRBrackAfterValues {
+        start: usize,
+        end: usize,
+        line: usize,
+    },
+
     #[error("Unknown parser error")]
     Unknown,
 }
@@ -226,14 +233,8 @@ pub enum SemanticAnalyserError {
     #[error("Couldn't find variable {name}")]
     VariableNotFound { name: String },
 
-    #[error("Couldn't find the object {object}")]
-    ObjectNotFound { object: String },
-
     #[error("Can't return outside of a function")]
     CannotReturnOutsideFunction,
-
-    #[error("Class has already been defined")]
-    ClassAlreadyDefined,
 }
 
 #[derive(Error, Debug)]
@@ -284,16 +285,4 @@ pub enum InterpreterError {
 
     #[error("Expected function declaration to be a function statement")]
     ExpectedFunctionStatementForDeclaration,
-
-    #[error("Only instances have properties ({name})")]
-    OnlyInstancesHaveProperties { name: String },
-
-    #[error("Undefined property '{name}'")]
-    UndefinedProperty { name: String },
-
-    #[error("Only instances have fields ({name})")]
-    OnlyInstancesHaveFields { name: String },
-
-    #[error("Undefined field '{name}'")]
-    UndefinedField { name: String },
 }

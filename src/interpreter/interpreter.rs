@@ -1,19 +1,9 @@
 use std::{
-    cell::RefCell, collections::HashMap, rc::Rc, time::{SystemTime, UNIX_EPOCH}
+    cell::RefCell, rc::Rc, time::{SystemTime, UNIX_EPOCH}
 };
 
 use crate::{
-    alteration,
-    arithmetic,
-    callable::{Callable, Func, NativeFunc},
-    class::Klass,
-    comparison,
-    enviromnent::{Environment, GlobalEnvironment, LocalEnvironment},
-    error::InterpreterError,
-    expr::{self, Expr},
-    stmt::{self, Stmt},
-    token::TokenType,
-    value::{LiteralType, Value},
+    alteration, arithmetic, callable::{Callable, Func, NativeFunc}, comparison, enviromnent::{Environment, GlobalEnvironment, LocalEnvironment}, error::InterpreterError, expr::{self, Expr}, list::List, stmt::{self, Stmt}, token::TokenType, value::{LiteralType, Value}
 };
 
 pub type StmtResult = Result<(), Result<Value, InterpreterError>>;
@@ -233,7 +223,6 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                 }
 
                 match callee {
-                    Value::Class(cls) => return cls.call(self, Vec::new()),
                     Value::Function(f) => {
                         if args.len() != f.arity {
                             return Err(InterpreterError::ArgsDifferFromArity {
@@ -262,32 +251,29 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_get_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
-        match expr {
-            Expr::Get { object, name } => {
-                let object = self.evaluate(object)?;
-
-                if let Value::Instance(i) = object {
-                    return i.get(name.clone());
-                }
-
-                return Err(InterpreterError::OnlyInstancesHaveProperties {
-                    name: name.lexeme.clone()
-                });
-            },
-            _ => return Err(InterpreterError::DifferentExpression {
-                expr: expr.clone(),
-                expected: "get".to_string(),
-            }),
-        }
-    }
-
     fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::Grouping { expression } => return self.evaluate(expression),
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "group".to_string(),
+            }),
+        }
+    }
+
+    fn visit_list_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::List { items } => {
+                let mut list: Vec<Value> = Vec::new();
+                for item in items {
+                    list.push(self.evaluate(item)?);
+                }
+
+                Ok(Value::List(List::new(list)))
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "list".to_string(),
             }),
         }
     }
@@ -332,26 +318,6 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "logical".to_string(),
-            }),
-        }
-    }
-
-    fn visit_set_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
-        match expr {
-            Expr::Set { object, name, value } => {
-                let object = self.evaluate(object)?;
-
-                return match object {
-                    Value::Instance(mut instance) => {
-                        let value = self.evaluate(value)?;
-                        return instance.set(name.clone(), value);
-                    },
-                    _ => Err(InterpreterError::OnlyInstancesHaveFields { name: name.lexeme.clone() })
-                }
-            },
-            _ => return Err(InterpreterError::DifferentExpression {
-                expr: expr.clone(),
-                expected: "set".to_string(),
             }),
         }
     }
@@ -417,43 +383,6 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
             _ => return Err(Err(InterpreterError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "block".to_string(),
-            })),
-        }
-    }
-
-    fn visit_class_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::Class { name, methods } => {
-                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Literal(LiteralType::Null));
-                
-                let mut methods_vec: HashMap<String, Func> = HashMap::new();
-                for method in methods {
-                    match method {
-                        Stmt::Function { name, .. } => {
-                            let function = match Func::new(method.clone(), Rc::clone(&self.environment)) {
-                                Ok(f) => f,
-                                Err(e) => return Err(Err(e))
-                            };
-                            methods_vec.insert(name.lexeme.clone(), function);
-                        },
-                        _ => return Err(Err(InterpreterError::DifferentStatement {
-                            stmt: stmt.clone(),
-                            expected: "function".to_string(),
-                        })),
-                    }
-                    
-                }
-
-                let class = Value::Class(Klass::new(name.lexeme.clone(), methods_vec));
-
-                return match self.environment.borrow_mut().assign(name.clone(), class) {
-                    Ok(_) => Ok(()),
-                    Err(e) => Err(Err(e)),
-                };
-            },
-            _ => return Err(Err(InterpreterError::DifferentStatement {
-                stmt: stmt.clone(),
-                expected: "class".to_string(),
             })),
         }
     }
@@ -590,10 +519,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                         println!("{}", self.stringify(literal));
                         return Ok(());
                     },
-                    Value::Instance(instance) => {
-                        println!("{instance}");
+                    Value::List(list) => {
+                        println!("{list}");
                         return Ok(());
-                    }
+                    },
                     _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
                 }
             }

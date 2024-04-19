@@ -79,7 +79,7 @@ macro_rules! expr_visitor {
         pub trait ExprVisitor<T> {
             $(
                 paste! {
-                    fn [<visit_ $exprs:lower _expr>](&mut self, stmt: &Expr) -> T;
+                    fn [<visit_ $exprs:lower _expr>](&mut self, expr: &Expr) -> T;
                 }
             )+
         }

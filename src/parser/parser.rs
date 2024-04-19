@@ -30,15 +30,7 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Stmt, ParserError> {
-        if self.match_token(vec![&TokenType::Class]) {
-            return match self.class_declaration() {
-                Ok(v) => Ok(v),
-                Err(e) => {
-                    self.synchronize();
-                    Err(e)
-                }
-            }
-        } else if self.match_token(vec![&TokenType::Def]) {
+        if self.match_token(vec![&TokenType::Def]) {
             return match self.function("function") {
                 Ok(v) => Ok(v),
                 Err(e) => {
@@ -57,20 +49,6 @@ impl Parser {
         } else {
             return self.statement();
         }
-    }
-
-    fn class_declaration(&mut self) -> Result<Stmt, ParserError> {
-        let name = self.consume(TokenType::Identifier, "ExpectClassName")?;
-        self.consume(TokenType::LBrace, "ExpectLBraceBeforeClassBody")?;
-
-        let mut methods: Vec<Stmt> = Vec::new();
-        while !self.check(TokenType::RBrace) && !self.is_at_end() {
-            methods.push(self.function("method")?);
-        }
-
-        self.consume(TokenType::RBrace, "ExpectRBraceAfterBody")?;
-
-        return Ok(Stmt::Class { name, methods });
     }
 
     fn function(&mut self, kind: &str) -> Result<Stmt, ParserError> {
@@ -333,8 +311,6 @@ impl Parser {
                     });
                 }
             }
-        } else if let Expr::Set { object, name, value } = &expr {
-            return Ok(Expr::Set { object: object.clone(), name: name.clone(), value: value.clone() });
         }
 
         return Ok(expr);
@@ -462,9 +438,6 @@ impl Parser {
         loop {
             if self.match_token(vec![&TokenType::LParen]) {
                 expr = self.finish_call(expr)?;
-            } else if self.match_token(vec![&TokenType::Dot]) {
-                let name = self.consume(TokenType::Identifier, "ExpectedPropertyName")?;
-                expr = Expr::Get { object: Box::new(expr), name };
             } else {
                 break;
             }
@@ -560,6 +533,23 @@ impl Parser {
             return Ok(Expr::Grouping {
                 expression: Box::new(expr),
             });
+        }
+
+        if self.match_token(vec![&TokenType::LBrack]) {
+            let mut items: Vec<Expr> = Vec::new();
+            loop {
+                if self.match_token(vec![&TokenType::RBrack]) {
+                    break;
+                }
+                items.push(self.expression()?);
+                if !self.match_token(vec![&TokenType::Comma]) {
+                    break;
+                }
+            }
+
+            self.consume(TokenType::RBrack, "ExpectRBrackAfterValues")?;
+
+            return Ok(Expr::List { items });
         }
 
         let token = self.peek();
@@ -803,6 +793,14 @@ impl Parser {
             "ExpectedPropertyName" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedPropertyName {
+                    start: token.start,
+                    end: token.end,
+                    line: token.line,
+                })
+            },
+            "ExpectRBrackAfterValues" => {
+                let token = self.peek();
+                Err(ParserError::ExpectRBrackAfterValues {
                     start: token.start,
                     end: token.end,
                     line: token.line,

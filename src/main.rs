@@ -22,11 +22,11 @@ mod semanticanalyser;
 #[path = "./values/callable.rs"]
 mod callable;
 
-#[path = "./values/class.rs"]
-mod class;
-
 #[path = "./values/expr.rs"]
 mod expr;
+
+#[path = "./values/list.rs"]
+mod list;
 
 #[path = "./values/stmt.rs"]
 mod stmt;

@@ -27,12 +27,11 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Expr>,
     },
-    Get {
-        object: Box<Expr>,
-        name: Token
-    },
     Grouping {
         expression: Box<Expr>,
+    },
+    List {
+        items: Vec<Expr>,
     },
     Literal {
         value: LiteralType,
@@ -41,11 +40,6 @@ pub enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>,
-    },
-    Set {
-        object: Box<Expr>,
-        name: Token,
-        value: Box<Expr>,
     },
     Unary {
         operator: Token,
@@ -70,16 +64,15 @@ impl fmt::Display for Expr {
                 return write!(f, "Call({callee} {paren} {arguments:?})");
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
-            Expr::Get { object, name } => return write!(f, "Get({object}.{name})"),
+            Expr::List { items } => return write!(f, "[{items:?}]"),
             Expr::Literal { value } => return write!(f, "Literal({value})"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
             },
-            Expr::Set { object, name, value } => write!(f, "Set({object}.{name} = {value})"),
             Expr::Unary { operator, right } => return write!(f, "Unary({operator} {right})"),
             Expr::Var { name } => return write!(f, "Var({name})"),
         }
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Get, Grouping, Literal, Logical, Set, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, Literal, Logical, Unary, Var);

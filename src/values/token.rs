@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
-    LParen, RParen, LBrace, RBrace, Comma, Dot,
+    LParen, RParen, LBrace, RBrace, LBrack, RBrack, Comma, Dot,
     Minus, Plus, Semicolon, FSlash, Asterisk, Incr, Decr,
 
     Bang, BangEqual, Equal, EqualEqual,
@@ -48,6 +48,8 @@ impl fmt::Display for TokenType {
             TokenType::RParen => write!(f, "RParen"),
             TokenType::LBrace => write!(f, "LBrace"),
             TokenType::RBrace => write!(f, "RBrace"),
+            TokenType::LBrack => write!(f, "LBrack"),
+            TokenType::RBrack => write!(f, "RBrack"),
             TokenType::Comma => write!(f, "Comma"),
             TokenType::Dot => write!(f, "Dot"),
             TokenType::Minus => write!(f, "Minus"),

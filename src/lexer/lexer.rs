@@ -152,6 +152,8 @@ impl Lexer {
             ')' => token = TokenType::RParen,
             '{' => token = TokenType::LBrace,
             '}' => token = TokenType::RBrace,
+            '[' => token = TokenType::LBrack,
+            ']' => token = TokenType::RBrack,
             ',' => token = TokenType::Comma,
             '.' => token = TokenType::Dot,
             ';' => token = TokenType::Semicolon,

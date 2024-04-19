@@ -8,10 +8,6 @@ pub enum Stmt {
     Block {
         statements: Vec<Stmt>,
     },
-    Class {
-        name: Token,
-        methods: Vec<Stmt>
-    },
     Expression {
         expression: Expr,
     },
@@ -52,7 +48,6 @@ impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stmt::Block { statements } => write!(f, "Block({statements:?}"),
-            Stmt::Class { name, methods } => write!(f, "Class({name} {methods:#?})"),
             Stmt::Expression { expression } => write!(f, "Expression({expression})"),
             Stmt::For { initializer, condition, increment, body } => {
                 return write!(f, "For({initializer:?} {condition} {increment:?} {body})");
@@ -85,4 +80,4 @@ impl fmt::Display for Stmt {
     }
 }
 
-stmt_visitor!(Block, Class, Expression, For, Function, If, Print, Return, Var, While);
+stmt_visitor!(Block, Expression, For, Function, If, Print, Return, Var, While);
