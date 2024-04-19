@@ -212,10 +212,26 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             Expr::Grouping { expression } => {
                 expression.accept_expr(self)?;
                 return Ok(());
-            }
+            },
             _ => return Err(SemanticAnalyserError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "grouping".to_string(),
+            }),
+        }
+    }
+
+    fn visit_index_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::Index { list, index } => {
+                index.accept_expr(self)?;
+                let var = Expr::Var { name: list.clone() };
+                var.accept_expr(self)?;
+
+                return Ok(());
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "index".to_string(),
             }),
         }
     }

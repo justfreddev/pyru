@@ -30,6 +30,10 @@ pub enum Expr {
     Grouping {
         expression: Box<Expr>,
     },
+    Index {
+        list: Token,
+        index: Box<Expr>,
+    },
     List {
         items: Vec<Expr>,
     },
@@ -64,6 +68,7 @@ impl fmt::Display for Expr {
                 return write!(f, "Call({callee} {paren} {arguments:?})");
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
+            Expr::Index { list, index } => return write!(f, "{list}[{index}]"),
             Expr::List { items } => return write!(f, "[{items:?}]"),
             Expr::Literal { value } => return write!(f, "Literal({value})"),
             Expr::Logical { left, operator, right } => {
@@ -75,4 +80,4 @@ impl fmt::Display for Expr {
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, Literal, Logical, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, Index, List, Literal, Logical, Unary, Var);

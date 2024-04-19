@@ -285,4 +285,13 @@ pub enum InterpreterError {
 
     #[error("Expected function declaration to be a function statement")]
     ExpectedFunctionStatementForDeclaration,
+
+    #[error("Expected the index to be a number value")]
+    ExpectedIndexToBeANum,
+
+    #[error("The list index was out of range")]
+    IndexOutOfRange,
+
+    #[error("The value cannot be indexed")]
+    ValueWasNotAList,
 }

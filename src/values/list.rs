@@ -4,7 +4,7 @@ use crate::value::Value;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct List {
-    values: Vec<Value>
+    pub values: Vec<Value>
 }
 
 impl List {

@@ -261,6 +261,38 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
+    fn visit_index_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::Index { list, index } => {
+                let index = self.evaluate(index)?;
+                let idx: usize;
+                if let Value::Literal(v) = index {
+                    if let LiteralType::Num(num) = v {
+                        idx = num as usize;
+                    } else {
+                        return Err(InterpreterError::ExpectedIndexToBeANum);
+                    }
+                } else {
+                    return Err(InterpreterError::ExpectedIndexToBeANum)
+                }
+
+                let value = self.environment.borrow().get(list.clone())?;
+
+                if let Value::List(list) = value {
+                    if idx >= list.values.len() {
+                        return Err(InterpreterError::IndexOutOfRange);
+                    }
+                    return Ok(list.values[idx].clone());
+                }
+                return Err(InterpreterError::ValueWasNotAList);
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "index".to_string(),
+            }),
+        }
+    }
+
     fn visit_list_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::List { items } => {

@@ -523,8 +523,15 @@ impl Parser {
         }
 
         if self.match_token(vec![&TokenType::Identifier]) {
-            let name = self.previous();
-            return Ok(Expr::Var { name: name.clone() });
+            let name = self.previous().clone();
+            let expr = if self.match_token(vec![&TokenType::LBrack]) {
+                let index = self.expression()?;
+                self.consume(TokenType::RBrack, "ExpectedRBrackAfterIndex")?;
+                Expr::Index { list: name, index: Box::new(index) }
+            } else {
+                Expr::Var { name: name.clone() }
+            };
+            return Ok(expr);
         }
 
         if self.match_token(vec![&TokenType::LParen]) {
