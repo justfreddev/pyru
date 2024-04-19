@@ -525,9 +525,30 @@ impl Parser {
         if self.match_token(vec![&TokenType::Identifier]) {
             let name = self.previous().clone();
             let expr = if self.match_token(vec![&TokenType::LBrack]) {
-                let index = self.expression()?;
+                let mut start: Option<Box<Expr>> = None;
+                let mut end: Option<Box<Expr>> = None;
+                let mut is_splice = false;
+                if self.peek().token_type != TokenType::Colon {
+                    start = Some(Box::new(self.expression()?));
+                }
+                start = if start.is_some() {
+                    Some(start.unwrap())
+                } else {
+                    None
+                };
+                if self.match_token(vec![&TokenType::Colon]) {
+                    is_splice = true;
+                    if self.peek().token_type != TokenType::RBrack {
+                        end = Some(Box::new(self.expression()?));
+                    }
+                    end = if end.is_some() {
+                        Some(end.unwrap())
+                    } else {
+                        None
+                    };
+                }
                 self.consume(TokenType::RBrack, "ExpectedRBrackAfterIndex")?;
-                Expr::Index { list: name, index: Box::new(index) }
+                Expr::Splice { list: name, is_splice, start, end }
             } else {
                 Expr::Var { name: name.clone() }
             };

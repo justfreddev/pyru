@@ -220,22 +220,6 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
         }
     }
 
-    fn visit_index_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
-        match expr {
-            Expr::Index { list, index } => {
-                index.accept_expr(self)?;
-                let var = Expr::Var { name: list.clone() };
-                var.accept_expr(self)?;
-
-                return Ok(());
-            },
-            _ => return Err(SemanticAnalyserError::DifferentExpression {
-                expr: expr.clone(),
-                expected: "index".to_string(),
-            }),
-        }
-    }
-
     fn visit_list_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
             Expr::List { items } => {
@@ -273,6 +257,27 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             _ => return Err(SemanticAnalyserError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "logical".to_string(),
+            }),
+        }
+    }
+
+    fn visit_splice_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::Splice { list, is_splice: _, start, end } => {
+                let var = Expr::Var { name: list.clone() };
+                var.accept_expr(self)?;
+                if let Some(start) = start {
+                    start.accept_expr(self)?;
+                }
+                if let Some(end) = end {
+                    end.accept_expr(self)?;
+                }
+
+                return Ok(());
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "splice".to_string(),
             }),
         }
     }

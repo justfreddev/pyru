@@ -30,10 +30,6 @@ pub enum Expr {
     Grouping {
         expression: Box<Expr>,
     },
-    Index {
-        list: Token,
-        index: Box<Expr>,
-    },
     List {
         items: Vec<Expr>,
     },
@@ -44,6 +40,12 @@ pub enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>,
+    },
+    Splice {
+        list: Token,
+        is_splice: bool,
+        start: Option<Box<Expr>>,
+        end: Option<Box<Expr>>,
     },
     Unary {
         operator: Token,
@@ -68,16 +70,16 @@ impl fmt::Display for Expr {
                 return write!(f, "Call({callee} {paren} {arguments:?})");
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
-            Expr::Index { list, index } => return write!(f, "{list}[{index}]"),
             Expr::List { items } => return write!(f, "[{items:?}]"),
             Expr::Literal { value } => return write!(f, "Literal({value})"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
             },
+            Expr::Splice { list, is_splice: _, start, end } => write!(f, "{list}[{start:?}:{end:?}]"),
             Expr::Unary { operator, right } => return write!(f, "Unary({operator} {right})"),
             Expr::Var { name } => return write!(f, "Var({name})"),
         }
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Grouping, Index, List, Literal, Logical, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, Literal, Logical, Splice, Unary, Var);

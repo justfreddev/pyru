@@ -1,4 +1,16 @@
-// Prints [1, 2, 3, True]
+// Prints [1, 2]
+var list = [1, 2, 3];
+print list[:1];
+
+// Prints [2, 3]
+var list = [1, 2, 3];
+print list[1:];
+
+// Prints [1, 2, 3]
+var list = [1, 2, 3];
+print list[0:2];
+
+// Prints [1, 2, 3, true]
 var a = 3;
 var list = ["1", 2, a, true];
 print list;

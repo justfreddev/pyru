@@ -261,38 +261,6 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_index_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
-        match expr {
-            Expr::Index { list, index } => {
-                let index = self.evaluate(index)?;
-                let idx: usize;
-                if let Value::Literal(v) = index {
-                    if let LiteralType::Num(num) = v {
-                        idx = num as usize;
-                    } else {
-                        return Err(InterpreterError::ExpectedIndexToBeANum);
-                    }
-                } else {
-                    return Err(InterpreterError::ExpectedIndexToBeANum)
-                }
-
-                let value = self.environment.borrow().get(list.clone())?;
-
-                if let Value::List(list) = value {
-                    if idx >= list.values.len() {
-                        return Err(InterpreterError::IndexOutOfRange);
-                    }
-                    return Ok(list.values[idx].clone());
-                }
-                return Err(InterpreterError::ValueWasNotAList);
-            },
-            _ => return Err(InterpreterError::DifferentExpression {
-                expr: expr.clone(),
-                expected: "index".to_string(),
-            }),
-        }
-    }
-
     fn visit_list_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
             Expr::List { items } => {
@@ -350,6 +318,71 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "logical".to_string(),
+            }),
+        }
+    }
+
+    fn visit_splice_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::Splice { list, is_splice, start, end } => {
+                let mut start_idx_expr: Option<Value> = None;
+                let mut end_idx_expr: Option<Value> = None;
+
+                if let Some(start) = start {
+                    start_idx_expr = Some(self.evaluate(start)?);
+                }
+                if let Some(end) = end {
+                    end_idx_expr = Some(self.evaluate(end)?);
+                }
+
+                let mut start_idx: usize = 0;
+                let mut end_idx: Option<usize> = None;
+
+                // SHOULD PROBABLY MAKE A MACRO/FUNCTION FOR THESE
+                if let Some(Value::Literal(v)) = start_idx_expr.clone() {
+                    if let LiteralType::Num(num) = v {
+                        start_idx = num as usize;
+                    } else {
+                        return Err(InterpreterError::ExpectedIndexToBeANum);
+                    }
+                } else if end_idx_expr.is_none() {
+                    return Err(InterpreterError::ExpectedIndexToBeANum)
+                }
+
+                if let Some(Value::Literal(v)) = end_idx_expr {
+                    if let LiteralType::Num(num) = v {
+                        end_idx = Some(num as usize);
+                    } else {
+                        return Err(InterpreterError::ExpectedIndexToBeANum);
+                    }
+                } else if end_idx.is_some() {
+                    return Err(InterpreterError::ExpectedIndexToBeANum)
+                }
+
+                let value = self.environment.borrow().get(list.clone())?;
+
+                if let Value::List(list) = value {
+                    if let Some(end_idx) = end_idx {
+                        if end_idx >= list.values.len() {
+                            return Err(InterpreterError::IndexOutOfRange);
+                        }
+                        if start_idx_expr.is_none() {
+                            return Ok(Value::List(List::new(list.values[0..end_idx + 1].to_vec())));
+                        }
+
+                        return Ok(Value::List(List::new(list.values[start_idx..end_idx + 1].to_vec())));
+                    }
+                    if *is_splice {
+                        return Ok(Value::List(List::new(list.values[start_idx..list.values.len()].to_vec())));
+                    }
+                    return Ok(list.values[start_idx].clone());
+                }
+
+                return Err(InterpreterError::ValueWasNotAList);
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "splice".to_string(),
             }),
         }
     }

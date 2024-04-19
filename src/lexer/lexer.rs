@@ -157,6 +157,7 @@ impl Lexer {
             ',' => token = TokenType::Comma,
             '.' => token = TokenType::Dot,
             ';' => token = TokenType::Semicolon,
+            ':' => token = TokenType::Colon,
             '*' => token = TokenType::Asterisk,
             '-' => {
                 if self.match_token('-') {
