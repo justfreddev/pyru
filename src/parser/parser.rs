@@ -438,6 +438,14 @@ impl Parser {
         loop {
             if self.match_token(vec![&TokenType::LParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(vec![&TokenType::Dot]) {
+                let call = self.call()?;
+                let name = match expr {
+                    Expr::Var { ref name } => name,
+                    _ => panic!("wtf"),
+                };
+
+                return Ok(Expr::ListMethodCall { object: name.clone(), call: Box::new(call) })
             } else {
                 break;
             }
@@ -462,11 +470,10 @@ impl Parser {
             }
         }
 
-        let paren = self.consume(TokenType::RParen, "ExpectedRParenAfterArguments")?;
+        self.consume(TokenType::RParen, "ExpectedRParenAfterArguments")?;
 
         return Ok(Expr::Call {
             callee: Box::new(callee),
-            paren,
             arguments,
         });
     }

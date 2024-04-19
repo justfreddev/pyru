@@ -10,12 +10,12 @@ use crate::{
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Alteration {
-        name: Token,
-        alteration_type: TokenType,
+        name: Token, // Variable name
+        alteration_type: TokenType, // Incr or Decr tokens
     },
     Assign {
-        name: Token,
-        value: Box<Expr>,
+        name: Token, // Variable name
+        value: Box<Expr>, // The expression to be assigned
     },
     Binary {
         left: Box<Expr>,
@@ -23,15 +23,18 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Call {
-        callee: Box<Expr>,
-        paren: Token,
-        arguments: Vec<Expr>,
+        callee: Box<Expr>, // The name of the call, e.g. the function name
+        arguments: Vec<Expr>, // The arguments passed in the parenthesise
     },
     Grouping {
-        expression: Box<Expr>,
+        expression: Box<Expr>, // The expresion in brackets, usually binary
     },
     List {
-        items: Vec<Expr>,
+        items: Vec<Expr>, // The items to be in the created list
+    },
+    ListMethodCall {
+        object: Token, // The name of the instance that the method is being called on
+        call: Box<Expr>, // A call expression for the method call
     },
     Literal {
         value: LiteralType,
@@ -42,17 +45,17 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Splice {
-        list: Token,
-        is_splice: bool,
-        start: Option<Box<Expr>>,
-        end: Option<Box<Expr>>,
+        list: Token, // The name of the variable for the list
+        is_splice: bool, // Check if it is a splice to see if returning list or value
+        start: Option<Box<Expr>>, // The start index INCLUSIVE
+        end: Option<Box<Expr>>, // The end index INCLUSIVE
     },
     Unary {
         operator: Token,
         right: Box<Expr>,
     },
     Var {
-        name: Token,
+        name: Token, // The name of the variable which the value is gotten from
     },
 }
 
@@ -66,11 +69,14 @@ impl fmt::Display for Expr {
             Expr::Binary { left, operator, right } => {
                 return write!(f, "Binary({left} {operator} {right})");
             },
-            Expr::Call { callee, paren, arguments } => {
-                return write!(f, "Call({callee} {paren} {arguments:?})");
+            Expr::Call { callee, arguments } => {
+                return write!(f, "Call({callee} {arguments:?})");
             },
             Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
             Expr::List { items } => return write!(f, "[{items:?}]"),
+            Expr::ListMethodCall { object, call } => {
+                return write!(f, "{object}.{call}");
+            },
             Expr::Literal { value } => return write!(f, "Literal({value})"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
@@ -82,4 +88,4 @@ impl fmt::Display for Expr {
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, Literal, Logical, Splice, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, ListMethodCall, Literal, Logical, Splice, Unary, Var);

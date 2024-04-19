@@ -1,3 +1,33 @@
+// Prints 4 4
+var items = ["apple", "banana", "cherry", "pineapple"];
+print items.index("pineapple") + 1;
+print items.len();
+
+// All print ["apple", "banana", "cherry", "pineapple"]
+var items = ["banana", "cherry", "pineapple"];
+items.insertAt(0, "apple");
+print items;
+
+var items = ["apple", "banana", "cherry", "orange", "pineapple"];
+items.remove(3);
+print items;
+
+var items = ["apple", "banana", "cherry", "pineapple", "tomato"];
+items.pop();
+print items;
+
+var items = ["apple", "banana", "cherry"];
+items.push("pineapple");
+print items;
+
+
+// Prints apple banana cherry
+var items = ["apple", "banana", "cherry"];
+for (var i = 0; i < 3; i++) {
+  print items[i];
+}
+
+
 // Prints [1, 2]
 var list = [1, 2, 3];
 print list[:1];
@@ -6,9 +36,11 @@ print list[:1];
 var list = [1, 2, 3];
 print list[1:];
 
+
 // Prints [1, 2, 3]
 var list = [1, 2, 3];
 print list[0:2];
+
 
 // Prints [1, 2, 3, true]
 var a = 3;

@@ -294,4 +294,10 @@ pub enum InterpreterError {
 
     #[error("The value cannot be indexed")]
     ValueWasNotAList,
+
+    #[error("That method does not exist on a list")]
+    InvalidListMethod,
+
+    #[error("The item could not be found in the list")]
+    ItemNotFound,
 }

@@ -191,7 +191,7 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 
     fn visit_call_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
-            Expr::Call { callee, paren: _, arguments } => {
+            Expr::Call { callee, arguments } => {
                 callee.accept_expr(self)?;
 
                 for argument in arguments {
@@ -232,6 +232,19 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             _ => return Err(SemanticAnalyserError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "list".to_string(),
+            }),
+        }
+    }
+
+    fn visit_listmethodcall_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::ListMethodCall { object, .. } => {
+                Expr::Var { name: object.clone() }.accept_expr(self)?;
+                return Ok(());
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "listmethodcall".to_string(),
             }),
         }
     }

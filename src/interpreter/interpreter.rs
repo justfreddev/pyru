@@ -212,7 +212,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
 
     fn visit_call_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
         match expr {
-            Expr::Call { callee, paren: _, arguments } => {
+            Expr::Call { callee, arguments } => {
                 let callee = self.evaluate(callee)?;
 
                 let mut args: Vec<Value> = Vec::new();
@@ -268,12 +268,65 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                 for item in items {
                     list.push(self.evaluate(item)?);
                 }
-
                 Ok(Value::List(List::new(list)))
             },
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "list".to_string(),
+            }),
+        }
+    }
+
+    fn visit_listmethodcall_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+        match expr {
+            Expr::ListMethodCall { object, call } => {
+                if let Expr::Call { callee, arguments } = &**call {
+                    if let Expr::Var { name } = &**callee {
+                        let mut args: Vec<Value> = Vec::new();
+
+                        for argument in arguments {
+                            let arg = self.evaluate(argument)?;
+                            args.push(arg);
+                        }
+
+                        let list = self.environment.borrow().get(object.clone())?;
+                        let mut result_value: Option<Value> = None;
+                        let new_list;
+
+                        if let Value::List(mut list) = list {
+                            new_list = match name.lexeme.as_str() {
+                                "push" => list.push(args)?,
+                                "pop" => {
+                                    let temp = list.pop();
+                                    if temp.0.is_some() {
+                                        result_value = temp.0;
+                                    }
+                                    temp.1
+                                },
+                                "remove" => {
+                                    let temp = list.remove(args)?;
+                                    result_value = Some(temp.0);
+                                    temp.1
+                                },
+                                "insertAt" => list.insert_at(args)?,
+                                "index" => return Ok(Value::Literal(LiteralType::Num(list.index(args)? as f64))),
+                                "len" => return Ok(Value::Literal(LiteralType::Num(list.len() as f64))),
+                                _ => return Err(InterpreterError::InvalidListMethod)
+                            };
+
+                            self.environment.borrow_mut().assign(object.clone(), Value::List(new_list.clone()))?;
+                            if let Some(v) = result_value {
+                                return Ok(v);
+                            }
+                        }
+                    }
+                }
+
+                return Ok(Value::Literal(LiteralType::Null));
+            },
+            _ => return Err(InterpreterError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "listmethodcall".to_string(),
             }),
         }
     }
@@ -371,6 +424,9 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                         }
 
                         return Ok(Value::List(List::new(list.values[start_idx..end_idx + 1].to_vec())));
+                    }
+                    if start_idx >= list.values.len() {
+                        return Err(InterpreterError::IndexOutOfRange);
                     }
                     if *is_splice {
                         return Ok(Value::List(List::new(list.values[start_idx..list.values.len()].to_vec())));
