@@ -572,6 +572,9 @@ impl Parser {
 
         if self.match_token(vec![&TokenType::LBrack]) {
             let mut items: Vec<Expr> = Vec::new();
+            if self.match_token(vec![&TokenType::RBrack]) {
+                return Ok(Expr::List { items });
+            }
             loop {
                 if self.match_token(vec![&TokenType::RBrack]) {
                     break;
