@@ -300,4 +300,7 @@ pub enum InterpreterError {
 
     #[error("The item could not be found in the list")]
     ItemNotFound,
+
+    #[error("The two values could not be compared")]
+    CannotCompareValues,
 }

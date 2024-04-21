@@ -311,6 +311,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
                                 "insertAt" => list.insert_at(args)?,
                                 "index" => return Ok(Value::Literal(LiteralType::Num(list.index(args)? as f64))),
                                 "len" => return Ok(Value::Literal(LiteralType::Num(list.len() as f64))),
+                                "sort" => return Ok(Value::List(list.tim_sort()?)),
                                 _ => return Err(InterpreterError::InvalidListMethod)
                             };
 

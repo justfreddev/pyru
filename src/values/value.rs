@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{callable::{Func, NativeFunc}, list::List};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
     Function(Func),
     List(List),
@@ -10,7 +10,7 @@ pub enum Value {
     NativeFunction(NativeFunc),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Str(String),
     Num(f64),

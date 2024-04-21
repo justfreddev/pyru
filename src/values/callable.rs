@@ -29,6 +29,12 @@ impl PartialEq for Func {
     }
 }
 
+impl PartialOrd for Func {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.name.partial_cmp(&other.name)
+    }
+}
+
 impl Func {
     pub fn new(declaration: Stmt, closure: Rc<RefCell<dyn Environment>>) -> Result<Self, InterpreterError> {
         match &declaration {
@@ -69,7 +75,7 @@ impl Callable for Func {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct NativeFunc {
     name: String,
     pub arity: usize,
