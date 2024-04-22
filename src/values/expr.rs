@@ -77,7 +77,7 @@ impl fmt::Display for Expr {
             Expr::ListMethodCall { object, call } => {
                 return write!(f, "{object}.{call}");
             },
-            Expr::Literal { value } => return write!(f, "Literal({value})"),
+            Expr::Literal { value } => return write!(f, "{value}"),
             Expr::Logical { left, operator, right } => {
                 return write!(f, "Logical({left} {operator} {right})");
             },
