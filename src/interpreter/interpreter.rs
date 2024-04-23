@@ -3,19 +3,19 @@ use std::{
 };
 
 use crate::{
-    alteration, arithmetic, callable::{Callable, Func, NativeFunc}, comparison, enviromnent::{Environment, GlobalEnvironment, LocalEnvironment}, error::InterpreterError, expr::{self, Expr}, list::List, stmt::{self, Stmt}, token::TokenType, value::{LiteralType, Value}
+    alteration, arithmetic, callable::{Callable, Func, NativeFunc}, comparison, enviromnent::Environment, error::InterpreterError, expr::{self, Expr}, list::List, stmt::{self, Stmt}, token::TokenType, value::{LiteralType, Value}
 };
 
 pub type StmtResult = Result<(), Result<Value, InterpreterError>>;
 
 pub struct Interpreter {
-    pub globals: Rc<RefCell<GlobalEnvironment>>,
-    pub environment: Rc<RefCell<dyn Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
+    pub environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        let global = Rc::new(RefCell::new(GlobalEnvironment::new()));
+        let global = Rc::new(RefCell::new(Environment::new(None)));
 
         let clock = NativeFunc::new("clock".to_string(), 0, |_, _| {
             Ok(Value::Literal(LiteralType::Num(
@@ -32,7 +32,7 @@ impl Interpreter {
 
         return Self {
             globals: Rc::clone(&global),
-            environment: Rc::clone(&global) as Rc<RefCell<dyn Environment>>,
+            environment: Rc::clone(&global),
         };
     }
 
@@ -60,10 +60,10 @@ impl Interpreter {
         return stmt.accept_stmt(self);
     }
 
-    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<LocalEnvironment>>) -> StmtResult {
+    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> StmtResult {
         let previous = Rc::clone(&self.environment);
 
-        self.environment = Rc::clone(&environment) as Rc<RefCell<dyn Environment>>;
+        self.environment = Rc::clone(&environment);
 
         for statement in statements {
             match self.execute(&statement) {
@@ -492,7 +492,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
             Stmt::Block { statements } => {
                 match self.execute_block(
                     statements.clone(),
-                    Rc::new(RefCell::new(LocalEnvironment::new(Some(
+                    Rc::new(RefCell::new(Environment::new(Some(
                         self.environment.clone(),
                     )))),
                 ) {

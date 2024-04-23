@@ -1,7 +1,7 @@
 use std::{cell::RefCell, fmt, rc::Rc};
 
 use crate::{
-    enviromnent::{Environment, LocalEnvironment},
+    enviromnent::Environment,
     error::InterpreterError,
     interpreter::Interpreter,
     stmt::Stmt,
@@ -17,7 +17,7 @@ pub struct Func {
     name: String,
     pub arity: usize,
     declaration: Stmt,
-    closure: Rc<RefCell<dyn Environment>>,
+    closure: Rc<RefCell<Environment>>,
 }
 
 impl PartialEq for Func {
@@ -36,7 +36,7 @@ impl PartialOrd for Func {
 }
 
 impl Func {
-    pub fn new(declaration: Stmt, closure: Rc<RefCell<dyn Environment>>) -> Result<Self, InterpreterError> {
+    pub fn new(declaration: Stmt, closure: Rc<RefCell<Environment>>) -> Result<Self, InterpreterError> {
         match &declaration {
             Stmt::Function { name, params, .. } => {
                 return Ok(Self {
@@ -55,7 +55,7 @@ impl Callable for Func {
     fn call(&self, interpreter: &mut crate::interpreter::Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
         match &self.declaration {
             Stmt::Function { name: _, params, body } => {
-                let environment = Rc::new(RefCell::new(LocalEnvironment::new(Some(Rc::clone(
+                let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
                     &self.closure,
                 )))));
 
