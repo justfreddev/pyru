@@ -26,6 +26,7 @@ pub type Env = Rc<RefCell<Environment>>;
 pub struct Interpreter {
     pub globals: Env,
     pub environment: Env,
+    test_output: Vec<String>,
 }
 
 impl Interpreter {
@@ -56,10 +57,11 @@ impl Interpreter {
         return Self {
             globals: Rc::clone(&global),
             environment: Rc::clone(&global),
+            test_output: Vec::new()
         };
     }
 
-    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), InterpreterError> {
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<Vec<String>, InterpreterError> {
         for stmt in statements {
             match self.execute(&stmt) {
                 Ok(()) => {}
@@ -69,7 +71,7 @@ impl Interpreter {
                 },
             };
         }
-        return Ok(());
+        return Ok(self.test_output.clone());
     }
 
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
@@ -661,11 +663,13 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 };
                 match value {
                     Value::Literal(literal) => {
-                        println!("{}", self.stringify(literal));
+                        println!("{}", self.stringify(literal.clone()));
+                        self.test_output.push(self.stringify(literal));
                         return Ok(());
                     },
                     Value::List(list) => {
                         println!("{list}");
+                        self.test_output.push(format!("{list}"));
                         return Ok(());
                     },
                     _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),

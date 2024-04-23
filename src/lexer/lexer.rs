@@ -107,7 +107,7 @@ impl Lexer {
     }
 
     fn identifier(&mut self) -> Result<(), LexerError> {
-        while self.is_alpha(self.peek()?) {
+        while !self.is_at_end() && self.is_alpha(self.peek()?) {
             self.advance()?;
         }
 
@@ -119,29 +119,6 @@ impl Lexer {
 
         self.add_token(token_type);
         Ok(())
-    }
-
-    fn comment(&mut self) -> Result<(), LexerError> {
-        if self.match_token('/') {
-            loop {
-                if self.peek()? != '\n' && !self.is_at_end() {
-                    self.advance()?;
-                } else {
-                    self.tokens.push(Token::new(
-                        TokenType::Comment,
-                        String::from(self.source[self.start + 2..self.curr].trim()),
-                        String::from(self.source[self.start..self.curr].trim()),
-                        self.line,
-                        self.start,
-                        self.curr,
-                    ));
-                    return Ok(());
-                }
-            }
-        } else {
-            self.add_token(TokenType::FSlash);
-            Ok(())
-        }
     }
 
     fn scan_token(&mut self) -> Result<(), LexerError> {
@@ -211,7 +188,13 @@ impl Lexer {
             }
             ' ' | '\n' | '\t' => return Ok(()),
             '/' => {
-                self.comment()?;
+                if self.match_token('/') {
+                    while self.peek()? != '\n' && !self.is_at_end() {
+                        self.advance()?;
+                    }
+                } else {
+                    self.add_token(TokenType::FSlash);
+                }
                 return Ok(());
             }
             '"' => {
@@ -276,7 +259,7 @@ impl Lexer {
     }
 
     fn is_alpha(&self, c: char) -> bool {
-        return c.is_ascii_alphabetic() || (c == '_');
+        return c.is_alphanumeric() || (c == '_');
     }
 
     fn is_at_end(&self) -> bool {

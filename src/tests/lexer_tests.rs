@@ -1,11 +1,8 @@
 use crate::{
     lexer::Lexer,
     token::Token,
-    token::TokenType
+    token::TokenType,
 };
-
-// The lexers whole job is just to tokenise source code, so it shouldn't be too difficult
-// to test, it will just take a long to test
 
 #[macro_export]
 macro_rules! token {
@@ -21,11 +18,16 @@ macro_rules! token {
     };
 }
 
-fn lex(source: String) -> Vec<Token> {
-    let mut lexer = Lexer::new(source);
+fn lex(source: &str) -> Vec<Token> {
+    let mut lexer = Lexer::new(source.to_string());
     let tokens = match lexer.run() {
-        Ok(t) => t,
-        Err(_) => Vec::new()
+        Ok(t) => {
+            t
+        },
+        Err(e) => {
+            eprintln!("{e}");
+            Vec::new()
+        }
     };
     return tokens;
 }
@@ -34,7 +36,7 @@ fn lex(source: String) -> Vec<Token> {
 #[test]
 fn test_single_symbols() {
     assert_eq!(
-        lex("( ) { } , . ; * / - + ! = < >".to_string()),
+        lex("( ) { } , . ; * / - + ! = < >"),
         vec![
             token!(LParen ; "(" ; "" ; 1 ; 0 ; 1),
             token!(RParen ; ")" ; "" ; 1 ; 2 ; 3),
@@ -59,7 +61,7 @@ fn test_single_symbols() {
 #[test]
 fn test_double_symbols() {
     assert_eq!(
-        lex("-- ++ != == <= >=".to_string()),
+        lex("-- ++ != == <= >="),
         vec![
             token!(Decr ; "--" ; "" ; 1 ; 0 ; 2),
             token!(Incr ; "++" ; "" ; 1 ; 3 ; 5),
@@ -75,7 +77,7 @@ fn test_double_symbols() {
 #[test]
 fn test_strings() {
     assert_eq!(
-        lex("\"string\"".to_string()),
+        lex("\"string\""),
         vec![
             token!(String ; "\"string\"" ; "string" ; 1 ; 0 ; 8),
             token!(Eof ; "" ; "" ; 1 ; 8 ; 8)
@@ -83,15 +85,122 @@ fn test_strings() {
     );
 
     assert_eq!(
-        lex("\"Unterminated".to_string()),
+        lex("\"Unterminated"),
         vec![]
     );
 
     assert_eq!(
-        lex("\"New\n\rline\"".to_string()),
+        lex("\"New\n\rline\""),
         vec![
             token!(String ; "\"New\n\rline\"" ; "New\n\rline" ; 2 ; 0 ; 11),
             token!(Eof ; "" ; "" ; 2 ; 11 ; 11),
+        ]
+    );
+}
+
+#[test]
+fn test_comments() {
+    assert_eq!(
+        lex("// Comment body"),
+        vec![
+        ]
+    );
+}
+
+#[test]
+fn test_keywords() {
+    assert_eq!(
+        lex(
+            "and class def else false for if null or print return super this true var while"
+        ),
+        vec![
+            token!(And ; "and" ; "" ; 1 ; 0 ; 3),
+            token!(Class ; "class" ; "" ; 1 ; 4 ; 9),
+            token!(Def ; "def" ; "" ; 1 ; 10 ; 13),
+            token!(Else ; "else" ; "" ; 1 ; 14 ; 18),
+            token!(False ; "false" ; "" ; 1 ; 19 ; 24),
+            token!(For ; "for" ; "" ; 1 ; 25 ; 28),
+            token!(If ; "if" ; "" ; 1 ; 29 ; 31),
+            token!(Null ; "null" ; "" ; 1 ; 32 ; 36),
+            token!(Or ; "or" ; "" ; 1 ; 37 ; 39),
+            token!(Print ; "print" ; "" ; 1 ; 40 ; 45),
+            token!(Return ; "return" ; "" ; 1 ; 46 ; 52),
+            token!(Super ; "super" ; "" ; 1 ; 53 ; 58),
+            token!(This ; "this" ; "" ; 1 ; 59 ; 63),
+            token!(True ; "true" ; "" ; 1 ; 64 ; 68),
+            token!(Var ; "var" ; "" ; 1 ; 69 ; 72),
+            token!(While ; "while" ; "" ; 1 ; 73 ; 78),
+            token!(Eof ; "" ; "" ; 1 ; 78 ; 78)
+        ]
+    );
+}
+
+#[test]
+fn test_nums() {
+    assert_eq!(
+        lex("123."),
+        Vec::new()
+    );
+
+    assert_eq!(
+        lex(".123;"),
+        vec![
+            token!(Dot ; "." ; "" ; 1 ; 0 ; 1),
+            token!(Num ; "123" ; "123" ; 1 ; 1 ; 4),
+            token!(Semicolon ; ";" ; "" ; 1 ; 4 ; 5),
+            token!(Eof ; "" ; "" ; 1 ; 5; 5),
+        ]
+    );
+
+    assert_eq!(
+        lex("print 123;"),
+        vec![
+            token!(Print ; "print" ; "" ; 1 ; 0 ; 5),
+            token!(Num ; "123" ; "123" ; 1 ; 6 ; 9),
+            token!(Semicolon ; ";" ; "" ; 1 ; 9 ; 10),
+            token!(Eof ; "" ; "" ; 1 ; 10 ; 10),
+        ]
+    );
+
+    assert_eq!(
+        lex("print 0;"),
+        vec![
+            token!(Print ; "print" ; "" ; 1 ; 0 ; 5),
+            token!(Num ; "0" ; "0" ; 1 ; 6 ; 7),
+            token!(Semicolon ; ";" ; "" ; 1 ; 7 ; 8),
+            token!(Eof ; "" ; "" ; 1 ; 8 ; 8),
+        ]
+    );
+
+    assert_eq!(
+        lex("print -0;"),
+        vec![
+            token!(Print ; "print" ; "" ; 1 ; 0 ; 5),
+            token!(Minus ; "-" ; "" ; 1 ; 6 ; 7),
+            token!(Num ; "0" ; "0" ; 1 ; 7 ; 8),
+            token!(Semicolon ; ";" ; "" ; 1 ; 8 ; 9),
+            token!(Eof ; "" ; "" ; 1 ; 9 ; 9),
+        ]
+    );
+
+    assert_eq!(
+        lex("print 123.456;"),
+        vec![
+            token!(Print ; "print" ; "" ; 1 ; 0 ; 5),
+            token!(Num ; "123.456" ; "123.456" ; 1 ; 6 ; 13),
+            token!(Semicolon ; ";" ; "" ; 1 ; 13 ; 14),
+            token!(Eof ; "" ; "" ; 1 ; 14 ; 14),
+        ]
+    );
+
+    assert_eq!(
+        lex("print -0.001;"),
+        vec![
+            token!(Print ; "print" ; "" ; 1 ; 0 ; 5),
+            token!(Minus ; "-" ; "" ; 1 ; 6 ; 7),
+            token!(Num ; "0.001" ; "0.001" ; 1 ; 7 ; 12),
+            token!(Semicolon ; ";" ; "" ; 1 ; 12 ; 13),
+            token!(Eof ; "" ; "" ; 1 ; 13 ; 13),
         ]
     );
 }
