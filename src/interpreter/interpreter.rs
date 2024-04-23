@@ -1,16 +1,31 @@
 use std::{
-    cell::RefCell, rc::Rc, time::{SystemTime, UNIX_EPOCH}
+    cell::RefCell,
+    rc::Rc,
+    time::{SystemTime, UNIX_EPOCH},
 };
+use sha2::{Sha256, Digest};
 
 use crate::{
-    alteration, arithmetic, callable::{Callable, Func, NativeFunc}, comparison, enviromnent::Environment, error::InterpreterError, expr::{self, Expr}, list::List, stmt::{self, Stmt}, token::TokenType, value::{LiteralType, Value}
+    alteration,
+    arithmetic,
+    callable::{Callable, Func, NativeFunc},
+    comparison,
+    enviromnent::Environment,
+    error::InterpreterError,
+    expr::{self, Expr},
+    list::List,
+    stmt::{self, Stmt},
+    token::TokenType,
+    value::{LiteralType, Value},
 };
 
-pub type StmtResult = Result<(), Result<Value, InterpreterError>>;
+pub type ExprResult = Result<Value, InterpreterError>;
+pub type StmtResult = Result<(), ExprResult>;
+pub type Env = Rc<RefCell<Environment>>;
 
 pub struct Interpreter {
-    pub globals: Rc<RefCell<Environment>>,
-    pub environment: Rc<RefCell<Environment>>,
+    pub globals: Env,
+    pub environment: Env,
 }
 
 impl Interpreter {
@@ -26,9 +41,17 @@ impl Interpreter {
             )))
         });
 
-        global
-            .borrow_mut()
-            .define("clock".to_string(), Value::NativeFunction(clock));
+        let hash = NativeFunc::new("hash".to_string(), 1, |_, args| {
+            if let Value::Literal(LiteralType::Str(s)) = &args[0] {
+                let mut hasher = Sha256::new();
+                hasher.update(s);
+                return Ok(Value::Literal(LiteralType::Str(format!("{:x}", hasher.finalize()))));
+            }
+            return Err(InterpreterError::CannotHashValue);
+        });
+
+        global.borrow_mut().define("clock".to_string(), Value::NativeFunction(clock));
+        global.borrow_mut().define("hash".to_string(), Value::NativeFunction(hash));
 
         return Self {
             globals: Rc::clone(&global),
@@ -56,11 +79,11 @@ impl Interpreter {
         }
     }
 
-    fn execute(&mut self, stmt: &Stmt) -> Result<(), Result<Value, InterpreterError>> {
+    fn execute(&mut self, stmt: &Stmt) -> StmtResult {
         return stmt.accept_stmt(self);
     }
 
-    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> StmtResult {
+    pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Env) -> StmtResult {
         let previous = Rc::clone(&self.environment);
 
         self.environment = Rc::clone(&environment);
@@ -110,8 +133,8 @@ impl Interpreter {
         }
     }
 }
-impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
-    fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+impl expr::ExprVisitor<ExprResult> for Interpreter {
+    fn visit_alteration_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Alteration { name, alteration_type } => {
                 let curr_value = self.environment.borrow().get(name.clone())?;
@@ -133,7 +156,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_assign_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_assign_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Assign { name, value } => {
                 let value = self.evaluate(value)?;
@@ -149,7 +172,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_binary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_binary_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Binary { left, operator, right } => {
                 let left = self.evaluate(&left)?;
@@ -210,7 +233,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_call_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_call_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Call { callee, arguments } => {
                 let callee = self.evaluate(callee)?;
@@ -251,7 +274,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_grouping_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_grouping_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Grouping { expression } => return self.evaluate(expression),
             _ => return Err(InterpreterError::DifferentExpression {
@@ -261,7 +284,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_list_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_list_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::List { items } => {
                 let mut list: Vec<Value> = Vec::new();
@@ -277,7 +300,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_listmethodcall_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_listmethodcall_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::ListMethodCall { object, call } => {
                 if let Expr::Call { callee, arguments } = &**call {
@@ -332,7 +355,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_literal_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_literal_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Literal { value } => return Ok(Value::Literal(value.clone())),
             _ => return Err(InterpreterError::DifferentExpression {
@@ -342,7 +365,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_logical_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_logical_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Logical { left, operator, right } => {
                 let left = self.evaluate(left)?;
@@ -376,7 +399,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_splice_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_splice_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Splice { list, is_splice, start, end } => {
                 let mut start_idx_expr: Option<Value> = None;
@@ -444,7 +467,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_unary_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_unary_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Unary { operator, right } => {
                 let right = self.evaluate(right)?;
@@ -475,7 +498,7 @@ impl expr::ExprVisitor<Result<Value, InterpreterError>> for Interpreter {
         }
     }
 
-    fn visit_var_expr(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn visit_var_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Var { name } => return self.environment.borrow().get(name.clone()),
             _ => return Err(InterpreterError::DifferentExpression {

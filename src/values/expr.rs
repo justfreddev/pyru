@@ -61,29 +61,27 @@ pub enum Expr {
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        return match self {
             Expr::Alteration { name, alteration_type } => {
-                return write!(f, "Alteration({name} {alteration_type})");
+                write!(f, "Alteration({name} {alteration_type})")
             },
-            Expr::Assign { name, value } => return write!(f, "Assign({name} = {value}"),
+            Expr::Assign { name, value } => write!(f, "Assign({name} = {value}"),
             Expr::Binary { left, operator, right } => {
-                return write!(f, "Binary({left} {operator} {right})");
+                write!(f, "Binary({left} {operator} {right})")
             },
-            Expr::Call { callee, arguments } => {
-                return write!(f, "Call({callee} {arguments:?})");
-            },
-            Expr::Grouping { expression } => return write!(f, "Grouping({expression})"),
-            Expr::List { items } => return write!(f, "[{items:?}]"),
-            Expr::ListMethodCall { object, call } => {
-                return write!(f, "{object}.{call}");
-            },
-            Expr::Literal { value } => return write!(f, "{value}"),
+            Expr::Call { callee, arguments } => write!(f, "Call({callee} {arguments:?})"),
+            Expr::Grouping { expression } => write!(f, "Grouping({expression})"),
+            Expr::List { items } => write!(f, "[{items:?}]"),
+            Expr::ListMethodCall { object, call } => write!(f, "{object}.{call}"),
+            Expr::Literal { value } => write!(f, "{value}"),
             Expr::Logical { left, operator, right } => {
-                return write!(f, "Logical({left} {operator} {right})");
+                write!(f, "Logical({left} {operator} {right})")
             },
-            Expr::Splice { list, is_splice: _, start, end } => write!(f, "{list}[{start:?}:{end:?}]"),
-            Expr::Unary { operator, right } => return write!(f, "Unary({operator} {right})"),
-            Expr::Var { name } => return write!(f, "Var({name})"),
+            Expr::Splice { list, is_splice: _, start, end } => {
+                write!(f, "{list}[{start:?}:{end:?}]")
+            },
+            Expr::Unary { operator, right } => write!(f, "Unary({operator} {right})"),
+            Expr::Var { name } => write!(f, "Var({name})"),
         }
     }
 }

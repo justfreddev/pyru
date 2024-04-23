@@ -303,4 +303,7 @@ pub enum InterpreterError {
 
     #[error("The two values could not be compared")]
     CannotCompareValues,
+
+    #[error("The value passed in to the hash function must be a string")]
+    CannotHashValue,
 }

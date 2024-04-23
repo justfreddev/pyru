@@ -238,8 +238,9 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 
     fn visit_listmethodcall_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
-            Expr::ListMethodCall { object, .. } => {
+            Expr::ListMethodCall { object, call } => {
                 Expr::Var { name: object.clone() }.accept_expr(self)?;
+                call.accept_expr(self)?;
                 return Ok(());
             },
             _ => return Err(SemanticAnalyserError::DifferentExpression {
@@ -312,6 +313,10 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
         match expr {
             Expr::Var { name } => {
                 if self.check_declared(&name.lexeme) {
+                    return Ok(());
+                }
+
+                if name.lexeme == "hash" || name.lexeme == "clock" {
                     return Ok(());
                 }
 

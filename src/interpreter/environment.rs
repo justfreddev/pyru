@@ -7,6 +7,7 @@ use std::{
 
 use crate::{
     error::InterpreterError,
+    interpreter::Env,
     token::Token,
     value::Value,
 };
@@ -14,11 +15,11 @@ use crate::{
 #[derive(Debug)]
 pub struct Environment {
     values: HashMap<String, Rc<RefCell<Value>>>,
-    enclosing: Option<Rc<RefCell<Environment>>>
+    enclosing: Option<Env>
 }
 
 impl Environment {
-    pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
+    pub fn new(enclosing: Option<Env>) -> Self {
         return Self {
             values: HashMap::new(),
             enclosing,

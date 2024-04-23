@@ -1,7 +1,11 @@
 use paste::paste;
 use std::fmt;
 
-use crate::{expr::Expr, stmt_visitor, token::Token};
+use crate::{
+    expr::Expr,
+    stmt_visitor,
+    token::Token
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
