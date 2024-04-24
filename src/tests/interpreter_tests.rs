@@ -1,7 +1,8 @@
 use crate::{
     interpreter::Interpreter,
-    lexer::Lexer, parser::Parser,
-    semanticanalyser::SemanticAnalyser
+    lexer::Lexer,
+    parser::Parser,
+    semanticanalyser::SemanticAnalyser,
 };
 
 fn run(source: &str) -> Vec<String> {
