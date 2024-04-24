@@ -5,7 +5,7 @@ use crate::{
     semanticanalyser::SemanticAnalyser,
 };
 
-fn run(source: &str) -> Vec<String> {
+pub fn run(source: &str) -> Vec<String> {
     let mut lexer = Lexer::new(source.to_string());
     let tokens = match lexer.run() {
         Ok(tokens) => tokens,
@@ -13,11 +13,6 @@ fn run(source: &str) -> Vec<String> {
             return vec!["error".to_string()];
         }
     };
-
-    for token in &tokens {
-        println!("{token}");
-    }
-    println!("\n\n\n");
 
     let mut parser = Parser::new(tokens);
     let ast = match parser.parse() {

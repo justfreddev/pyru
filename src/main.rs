@@ -37,17 +37,17 @@ mod token;
 #[path = "./values/value.rs"]
 mod value;
 
+#[path = "./tests/interpreter_tests.rs"]
+mod interpreter_tests;
+
 #[cfg(test)]
 mod tests;
 
-use rocket::{get, launch, routes};
+use rocket::{launch, post, routes};
 use rocket::serde::{Deserialize, Serialize, json::Json};
 use std::io::Write;
 
-use interpreter::Interpreter;
-use lexer::Lexer;
-use parser::Parser;
-use semanticanalyser::SemanticAnalyser;
+use interpreter_tests::run;
 
 
 #[derive(Serialize, Deserialize)]
@@ -56,7 +56,7 @@ struct Message<'r> {
 }
 
 
-fn repl() -> String {
+fn _repl() -> String {
     let mut source = String::new();
     loop {
         let mut temp_source = String::new();
@@ -71,46 +71,9 @@ fn repl() -> String {
     }
 }
 
-fn run(source: String) -> Vec<String> {
-    let mut lexer = Lexer::new(source.to_string());
-    let tokens = match lexer.run() {
-        Ok(tokens) => tokens,
-        Err(_) => {
-            return vec!["error".to_string()];
-        }
-    };
-
-    let mut parser = Parser::new(tokens);
-    let ast = match parser.parse() {
-        Ok(ast) => ast,
-        Err(e) => {
-            eprintln!("A parser error occured: {e}");
-            return vec!["error".to_string()];
-        }
-    };
-
-    let mut semantic_analyser = SemanticAnalyser::new(ast.clone());
-    match semantic_analyser.run() {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("A semantic error occured: {e}");
-        }
-    }
-
-    let mut interpreter = Interpreter::new();
-    match interpreter.interpret(ast) {
-        Ok(output) => return output,
-        Err(e) => {
-            eprintln!("An interpreter error occured: {e}")
-        }
-    }
-
-    return vec!["error".to_string()];
-}
-
-#[get("/test", format = "json", data = "<message>")]
+#[post("/test", format = "json", data = "<message>")]
 fn test(message: Json<Message<'_>>) -> Json<String> {
-    let output = run(message.source.to_string());
+    let output = run(message.source);
 
     Json(format!("{:?}", output))
 }
@@ -125,38 +88,5 @@ fn rocket() -> _ {
 // fn main() {
 //     let source = repl();
 
-//     let mut lexer = Lexer::new(source);
-//     let tokens = match lexer.run() {
-//         Ok(tokens) => tokens,
-//         Err(e) => {
-//             eprintln!("A lexer error occured: {e}");
-//             return;
-//         }
-//     };
-
-//     let mut parser = Parser::new(tokens);
-//     let ast = match parser.parse() {
-//         Ok(ast) => ast,
-//         Err(e) => {
-//             eprintln!("A parser error occured: {e}");
-//             return;
-//         }
-//     };
-
-//     let mut semantic_analyser = SemanticAnalyser::new(ast.clone());
-//     match semantic_analyser.run() {
-//         Ok(_) => {}
-//         Err(e) => {
-//             eprintln!("A semantic error occured: {e}");
-//             return;
-//         }
-//     }
-
-//     let mut interpreter = Interpreter::new();
-//     match interpreter.interpret(ast) {
-//         Ok(_) => {}
-//         Err(e) => {
-//             eprintln!("An interpreter error occured: {e}")
-//         }
-//     }
+//     run(source.as_str());
 // }
