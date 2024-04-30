@@ -43,20 +43,20 @@ mod interpreter_tests;
 #[cfg(test)]
 mod tests;
 
-use rocket::{launch, post, routes};
+#[allow(unused)]
+use rocket::{http::Method, launch, post, routes};
 use rocket::serde::{Deserialize, Serialize, json::Json};
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 use std::io::Write;
 
 use interpreter_tests::run;
 
-
 #[derive(Serialize, Deserialize)]
-struct Message<'r> {
-    source: &'r str,
+struct Message {
+    source: String,
 }
 
-
-fn _repl() -> String {
+fn repl() -> String {
     let mut source = String::new();
     loop {
         let mut temp_source = String::new();
@@ -71,22 +71,44 @@ fn _repl() -> String {
     }
 }
 
-#[post("/test", format = "json", data = "<message>")]
-fn test(message: Json<Message<'_>>) -> Json<String> {
-    let output = run(message.source);
+
+fn _make_cors() -> Cors {
+    let allowed_origins = AllowedOrigins::some_exact(&[ // 4.
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:8000",
+        "http://0.0.0.0:8000",
+        "http://localhost:5173"
+    ]);
+
+    CorsOptions {
+        allowed_origins,
+        allowed_methods: vec![Method::Post].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::all(),
+        allow_credentials: true,
+        ..Default::default()
+    }
+    .to_cors()
+    .expect("error while building CORS")
+}
+
+
+#[post("/runcode", format = "json", data = "<message>")]
+fn _run_code(message: Json<Message>) -> Json<String> {
+    let output = run(message.source.as_str());
 
     Json(format!("{:?}", output))
 }
 
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/v1", routes![test])
-}
-
-
-// fn main() {
-//     let source = repl();
-
-//     run(source.as_str());
+// #[launch]
+// fn rocket() -> _ {
+//     rocket::build().mount("/v1", routes![run_code]).attach(make_cors())
 // }
+
+
+fn main() {
+    let source = repl();
+
+    run(source.as_str());
+}

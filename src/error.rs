@@ -215,6 +215,13 @@ pub enum ParserError {
         line: usize,
     },
 
+    #[error("Can only call methods on identifiers on line {line}")]
+    CanOnlyCallIdentifiers {
+        start: usize,
+        end: usize,
+        line: usize,
+    },
+
     #[error("Unknown parser error")]
     Unknown,
 }

@@ -37,6 +37,7 @@ macro_rules! alteration {
 }
 
 #[macro_export]
+/// Populates the `kw` hashmap with the passed in keywords
 macro_rules! keywords {
     ( $kw:expr ; $($kws:ident),+ ) => {
         $(

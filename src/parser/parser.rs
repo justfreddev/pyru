@@ -442,7 +442,14 @@ impl Parser {
                 let call = self.call()?;
                 let name = match expr {
                     Expr::Var { ref name } => name,
-                    _ => panic!("wtf"),
+                    _ => {
+                        let token = self.peek();
+                        return Err(ParserError::CanOnlyCallIdentifiers {
+                            start: token.start,
+                            end: token.end,
+                            line: token.line,
+                        })
+                    },
                 };
 
                 return Ok(Expr::ListMethodCall { object: name.clone(), call: Box::new(call) })

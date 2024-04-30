@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 paste = "1.0.5"
 rocket = { version = "0.5.0", features = ["json"] }
+rocket_cors = "0.6.0"
 serde = { version = "1.0.198", features = ["derive"] }
 sha2 = "0.10.8"
 thiserror = "1.0.58"

@@ -49,8 +49,8 @@ fn test_blocks() {
             "var a = \"outer\";
 
             {
-              var a = \"inner\";
-              print a;
+                var a = \"inner\";
+                print a;
             }
             
             print a;
@@ -70,7 +70,8 @@ fn test_blocks() {
             if (true) {}
             if (false) {} else {}
 
-            print \"ok\";"
+            print \"ok\";
+            "
         ),
         vec![
             "ok".to_string()
