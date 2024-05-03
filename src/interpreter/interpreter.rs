@@ -417,7 +417,6 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 let mut start_idx: usize = 0;
                 let mut end_idx: Option<usize> = None;
 
-                // SHOULD PROBABLY MAKE A MACRO/FUNCTION FOR THESE
                 if let Some(Value::Literal(v)) = start_idx_expr.clone() {
                     if let LiteralType::Num(num) = v {
                         start_idx = num as usize;

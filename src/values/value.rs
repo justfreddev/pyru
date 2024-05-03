@@ -19,8 +19,6 @@ pub enum LiteralType {
     Null
 }
 
-
-
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
@@ -31,7 +29,6 @@ impl fmt::Display for Value {
         };
     }
 }
-
 
 impl fmt::Display for LiteralType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

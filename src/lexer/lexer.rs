@@ -7,7 +7,7 @@
 //! 
 //! ## Example
 //! 
-//! ```
+//! ```rust
 //! use crate::lexer::Lexer;
 //! use crate::token::TokenType;
 //! 

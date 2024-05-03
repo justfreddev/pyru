@@ -1,4 +1,5 @@
 #[macro_export]
+// Carries out arithmetic operations when binary expressions are evaluated
 macro_rules! arithmetic {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
@@ -10,6 +11,7 @@ macro_rules! arithmetic {
 }
 
 #[macro_export]
+// Carries out comparison operations when binary expressions are evaluated
 macro_rules! comparison {
     ( $operator:tt ; $num1:expr ; $num2:expr ) => {
         if let Value::Literal(LiteralType::Num(ln)) = $num1 {
@@ -27,10 +29,13 @@ macro_rules! comparison {
 }
 
 #[macro_export]
+// Increments or decrements the value in the alteration expression
 macro_rules! alteration {
     ( $self:ident ; $operator:tt ; $name:expr ; $value:expr ) => {
         if let Value::Literal(LiteralType::Num(n)) = $value {
-            return $self.environment.borrow_mut().assign($name.clone(), Value::Literal(LiteralType::Num(n $operator 1.0)));
+            return $self.environment.borrow_mut().assign(
+                $name.clone(), Value::Literal(LiteralType::Num(n $operator 1.0))
+            );
         };
         return Err(InterpreterError::ExpectedNumber);
     };
@@ -48,6 +53,7 @@ macro_rules! keywords {
 }
 
 #[macro_export]
+// Generates the visitor design pattern for statements
 macro_rules! stmt_visitor {
     ( $($stmts:ident),+ ) => {
         pub trait StmtVisitor<T> {
@@ -75,6 +81,7 @@ macro_rules! stmt_visitor {
 }
 
 #[macro_export]
+// Generates the visitor design pattern for expressions
 macro_rules! expr_visitor {
     ( $($exprs:ident),+ ) => {
         pub trait ExprVisitor<T> {
