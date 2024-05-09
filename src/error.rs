@@ -8,15 +8,19 @@ use crate::{
 
 #[derive(Error, Debug)]
 pub enum LexerError {
+    // Occurs when '"' is found, but there is not another one to close the string
     #[error("Unterminated string on line {line}")]
     UnterminatedString { line: usize },
 
+    // Occurs when an unrecognised character is found
     #[error("Unexpected character '{c}' on line {line}")]
     UnexpectedCharacter { c: char, line: usize },
 
+    // Occurs when the lexer expects another character but there are no more
     #[error("No more characters left on line {line}")]
     NoCharactersLeft { line: usize },
 
+    // Occurs when the lexer reaches the end of the source but still expects another character
     #[error("Cannot peek when at the end of the source string on line {line}")]
     CannotPeekAtTheEnd { line: usize }
 }

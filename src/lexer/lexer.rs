@@ -181,7 +181,7 @@ impl Lexer {
     fn string(&mut self) -> Result<(), LexerError> {
         while self.peek()? != '"' && !self.is_at_end() {
             if self.peek()? == '\n' {
-                self.line += 1;
+                return Err(LexerError::UnterminatedString { line: self.line });
             }
             self.advance()?;
         }
