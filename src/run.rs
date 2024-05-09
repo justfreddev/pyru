@@ -29,6 +29,7 @@ pub fn run(source: &str) {
         Ok(_) => {}
         Err(e) => {
             eprintln!("A semantic error occured: {e}");
+            return;
         }
     }
 
@@ -37,6 +38,7 @@ pub fn run(source: &str) {
         Ok(_) => {},
         Err(e) => {
             eprintln!("An interpreter error occured: {e}");
+            return;
         }
     }
 }
