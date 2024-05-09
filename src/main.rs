@@ -1,4 +1,3 @@
-#[path = "./error.rs"]
 mod error;
 
 #[path = "./interpreter/environment.rs"]
@@ -10,7 +9,6 @@ mod interpreter;
 #[path = "./lexer/lexer.rs"]
 mod lexer;
 
-#[path = "./macros.rs"]
 mod macros;
 
 #[path = "./parser/parser.rs"]
@@ -27,6 +25,8 @@ mod expr;
 
 #[path = "./values/list.rs"]
 mod list;
+
+mod run;
 
 #[path = "./values/stmt.rs"]
 mod stmt;
@@ -49,7 +49,7 @@ use rocket::serde::{Deserialize, Serialize, json::Json};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 use std::io::Write;
 
-use interpreter_tests::run;
+use run::run;
 
 #[derive(Serialize, Deserialize)]
 struct Message {

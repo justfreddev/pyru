@@ -5,6 +5,7 @@ use crate::{
     semanticanalyser::SemanticAnalyser,
 };
 
+#[allow(unused)]
 pub fn run(source: &str) -> Vec<String> {
     let mut lexer = Lexer::new(source.to_string());
     let tokens = match lexer.run() {
