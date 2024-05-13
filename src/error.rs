@@ -61,8 +61,18 @@ pub enum ParserError {
         line: usize,
     },
 
+    #[error("Expected '(' before the print value on line {line}")]
+    ExpectedLParenBeforePrintValue {
+        line: usize,
+    },
+
+    #[error("Expected ')' after the print value on line {line}")]
+    ExpectedRParenAfterPrintValue {
+        line: usize,
+    },
+
     #[error("Expect ';' after print value '{value}' on line {line}")]
-    ExpectedSemicolonAfterPrintValue {
+    ExpectedSemicolonAfterPrint {
         value: String,
         line: usize,
     },

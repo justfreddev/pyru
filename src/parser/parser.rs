@@ -285,8 +285,10 @@ impl Parser {
     }
 
     fn print_statement(&mut self) -> Result<Stmt, ParserError> {
+        self.consume(TokenType::LParen, "ExpectedLParenBeforePrintValue")?;
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, "ExpectedSemicolonAfterPrintValue")?;
+        self.consume(TokenType::RParen, "ExpectedRParenAfterPrintValue")?;
+        self.consume(TokenType::Semicolon, "ExpectedSemicolonAfterPrint")?;
 
         return Ok(Stmt::Print { expression: value });
     }
@@ -780,9 +782,9 @@ impl Parser {
                     line: token.line,
                 })
             },
-            "ExpectedSemicolonAfterPrintValue" => {
+            "ExpectedSemicolonAfterPrint" => {
                 let token = self.previous();
-                Err(ParserError::ExpectedSemicolonAfterPrintValue {
+                Err(ParserError::ExpectedSemicolonAfterPrint {
                     value: token.lexeme.clone(),
                     line: token.line,
                 })
@@ -889,6 +891,18 @@ impl Parser {
             "ExpectedDedent" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedDedent {
+                    line: token.line
+                })
+            },
+            "ExpectedLParenBeforePrintValue" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedLParenBeforePrintValue {
+                    line: token.line
+                })
+            },
+            "ExpectedRParenAfterPrintValue" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedRParenAfterPrintValue {
                     line: token.line
                 })
             },
