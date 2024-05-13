@@ -175,13 +175,13 @@ pub enum SemanticAnalyserError {
     #[error("The expression provided ({expr}), was different to the expression expected ({expected})")]
     DifferentExpression { expr: Expr, expected: String },
 
-    #[error("Already a variable named {name} in this scope")]
+    #[error("Already a variable named '{name}' in this scope")]
     VariableAlreadyAssignedInScope { name: String },
 
-    #[error("Couldn't find variable {name}")]
+    #[error("Couldn't find variable '{name}'")]
     VariableNotFound { name: String },
 
-    #[error("Can't return outside of a function")]
+    #[error("Cannot return outside of a function")]
     CannotReturnOutsideFunction,
 }
 
