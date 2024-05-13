@@ -153,13 +153,7 @@ impl Parser {
 
         self.consume(TokenType::Indent, "TODO: Expected function body")?;
 
-        let mut body = Vec::new();
-
-        while !self.check(TokenType::Dedent) && !self.is_at_end() {
-            let stmt = self.declaration()?;
-            body.push(stmt);
-        }
-        self.consume(TokenType::Dedent, "TODO: Expected a statement")?;
+        let body = self.body()?;
 
         return Ok(Stmt::Function { name, params, body });
     }
@@ -217,17 +211,6 @@ impl Parser {
 
         let initializer = Stmt::Var { name: name.clone(), initializer: Some(start) };
 
-        // let initializer;
-        // if self.match_token(vec![&TokenType::Semicolon]) {
-        //     initializer = None;
-        // } else if self.match_token(vec![&TokenType::Var]) {
-        //     let var_declaration = self.var_declaration()?;
-        //     initializer = Some(Box::new(var_declaration));
-        // } else {
-        //     let expr_stmt = self.expression_statement()?;
-        //     initializer = Some(Box::new(expr_stmt));
-        // }
-
         let condition = Expr::Binary {
             left: Box::new(Expr::Var { name: name.clone() }),
             operator: Token::new(
@@ -246,13 +229,7 @@ impl Parser {
             alteration_type: TokenType::Incr,
         };
 
-        let mut body = Vec::new();
-
-        while !self.check(TokenType::Dedent) && !self.is_at_end() {
-            let stmt = self.declaration()?;
-            body.push(stmt);
-        }
-        self.consume(TokenType::Dedent, "ExpectedDedent")?;
+        let body = self.body()?;
 
         return Ok(Stmt::For {
             initializer: Box::new(initializer),
@@ -269,7 +246,7 @@ impl Parser {
 
         self.consume(TokenType::Indent, "ExpectedIfBody")?;
 
-        let then_branch = self.statement()?;
+        let then_branch = self.body()?;
 
         let mut else_branch = None;
         if self.match_token(vec![&TokenType::Else]) {
@@ -279,7 +256,7 @@ impl Parser {
 
         return Ok(Stmt::If {
             condition,
-            then_branch: Box::new(then_branch),
+            then_branch: then_branch,
             else_branch,
         });
     }
@@ -305,13 +282,14 @@ impl Parser {
     }
 
     fn while_statement(&mut self) -> Result<Stmt, ParserError> {
-        self.consume(TokenType::LParen, "ExpectedLParenAfterWhile")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RParen, "ExpectedLParenAfterCondition")?;
 
-        let body = self.statement()?;
+        self.consume(TokenType::Colon, "ExpectedColonAfterWhileCondition")?;
+        self.consume(TokenType::Indent, "ExpectWhileBody")?;
 
-        return Ok(Stmt::While { condition, body: Box::new(body) });
+        let body = self.body()?;
+
+        return Ok(Stmt::While { condition, body });
     }
 
     fn expression(&mut self) -> Result<Expr, ParserError> {
@@ -669,6 +647,18 @@ impl Parser {
         return Ok(Stmt::Expression { expression: expr });
     }
 
+    fn body(&mut self) -> Result<Vec<Stmt>, ParserError> {
+        let mut body = Vec::new();
+
+        while !self.check(TokenType::Dedent) && !self.is_at_end() {
+            let stmt = self.declaration()?;
+            body.push(stmt);
+        }
+        self.consume(TokenType::Dedent, "TODO: Expected a statement")?;
+
+        return Ok(body);
+    }
+
     fn match_token(&mut self, types: Vec<&TokenType>) -> bool {
         for token_type in types {
             if self.check(*token_type) {
@@ -906,6 +896,18 @@ impl Parser {
                     line: token.line
                 })
             },
+            "ExpectedColonAfterWhileCondition" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedColonAfterWhileCondition {
+                    line: token.line
+                })
+            },
+            "ExpectWhileBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectWhileBody {
+                    line: token.line
+                })
+            }
             _ => Err(ParserError::Unknown),
         }
     }

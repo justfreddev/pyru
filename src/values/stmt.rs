@@ -25,7 +25,7 @@ pub enum Stmt {
     },
     If {
         condition: Expr,
-        then_branch: Box<Stmt>,
+        then_branch: Vec<Stmt>,
         else_branch: Option<Box<Stmt>>,
     },
     Print {
@@ -41,7 +41,7 @@ pub enum Stmt {
     },
     While {
         condition: Expr,
-        body: Box<Stmt>,
+        body: Vec<Stmt>,
     },
 }
 
@@ -59,11 +59,11 @@ impl fmt::Display for Stmt {
                 if else_branch.is_some() {
                     return write!(
                         f,
-                        "If({condition} {then_branch} {})",
+                        "If({condition} {then_branch:?} {})",
                         else_branch.as_ref().unwrap()
                     );
                 } else {
-                    return write!(f, "If({condition} {then_branch})");
+                    return write!(f, "If({condition} {then_branch:?})");
                 }
             },
             Stmt::Print { expression } => write!(f, "Print({expression})"),
@@ -75,7 +75,7 @@ impl fmt::Display for Stmt {
                     return write!(f, "Var({name})");
                 }
             }
-            Stmt::While { condition, body } => return write!(f, "While({condition} {body})"),
+            Stmt::While { condition, body } => return write!(f, "While({condition} {body:?})"),
         }
     }
 }

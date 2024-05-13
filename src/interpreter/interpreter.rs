@@ -616,13 +616,15 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 };
 
                 if condition_evaluation_result {
-                    match self.execute(&then_branch) {
-                        Ok(_) => {}
-                        Err(r) => match r {
-                            Ok(v) => return Err(Ok(v)),
-                            Err(e) => return Err(Err(e)),
-                        },
-                    };
+                    for stmt in then_branch {
+                        match self.execute(stmt) {
+                            Ok(_) => {}
+                            Err(r) => match r {
+                                Ok(v) => return Err(Ok(v)),
+                                Err(e) => return Err(Err(e)),
+                            },
+                        };
+                    }
                 } else if else_branch.is_some() {
                     match self.execute(&else_branch.as_ref().unwrap()) {
                         Ok(_) => {}
@@ -714,8 +716,6 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
     fn visit_while_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::While { condition, body } => {
-                let body = *body.clone();
-
                 let mut condition_evaluation = match self.evaluate(condition) {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
@@ -727,10 +727,12 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 };
 
                 while condition_result {
-                    match self.execute(&body) {
-                        Ok(_) => {}
-                        Err(r) => return Err(Ok(r)?)
-                    };
+                    for stmt in body {
+                        match self.execute(stmt) {
+                            Ok(_) => {}
+                            Err(r) => return Err(Ok(r)?)
+                        };
+                    }
 
                     condition_evaluation = match self.evaluate(condition) {
                         Ok(v) => v,

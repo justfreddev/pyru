@@ -203,10 +203,20 @@ pub enum ParserError {
         line: usize
     },
 
+    #[error("Expected a body in the while loop on line {line}")]
+    ExpectWhileBody {
+        line: usize
+    },
+
     #[error("Expected a dedent on line {line}")]
     ExpectedDedent {
         line: usize
     },
+
+    #[error("Expected ':' after the while loop condition on line {line}")]
+    ExpectedColonAfterWhileCondition {
+        line: usize
+    }, 
 
     #[error("Unknown parser error")]
     Unknown,

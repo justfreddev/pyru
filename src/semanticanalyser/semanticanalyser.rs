@@ -384,7 +384,9 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             Stmt::If { condition, then_branch, else_branch } => {
                 condition.accept_expr(self)?;
 
-                then_branch.accept_stmt(self)?;
+                for stmt in then_branch {
+                    stmt.accept_stmt(self)?;
+                }
 
                 if let Some(e_branch) = else_branch {
                     e_branch.accept_stmt(self)?;
@@ -465,7 +467,10 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
         match stmt {
             Stmt::While { condition, body } => {
                 condition.accept_expr(self)?;
-                body.accept_stmt(self)?;
+                
+                for stmt in body {
+                    stmt.accept_stmt(self)?;
+                }
 
                 return Ok(());
             }
