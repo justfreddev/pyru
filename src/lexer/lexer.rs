@@ -80,6 +80,9 @@ pub struct Lexer {
     start: usize,
     curr: usize,
     line: usize,
+    indent: usize,
+    is_indented: bool,
+    is_new_line: bool,
     keywords: HashMap<String, TokenType>,
 }
 
@@ -90,14 +93,13 @@ impl Lexer {
     /// ## Returns
     /// - `Lexer`: A new instance of the lexer
     pub fn new(source: String) -> Self {
-        
         // Creates a new HashMap, mapping keyword Strings to the
         // TokenType of the keyword of all the keywords of the language
         let mut kw: HashMap<String, TokenType> = HashMap::new();
         keywords!(
             kw;
-            And, Class, Def, Else, False, For, If, Null, Or,
-            Print, Return, Super, This, True, Var, While
+            And, Class, Def, Else, False, For, If, In, Null,
+            Or, Print, Return, Super, This, True, Var, While
         );
 
         return Self {
@@ -106,6 +108,9 @@ impl Lexer {
             start: 0,
             curr: 0,
             line: 1,
+            indent: 0,
+            is_indented: false,
+            is_new_line: false,
             keywords: kw,
         };
     }
@@ -129,6 +134,17 @@ impl Lexer {
             self.scan_token()?;
         }
         self.start = self.curr;
+
+        if self.is_indented {
+            self.tokens.push(Token::new(
+                TokenType::Dedent,
+                "".to_string(),
+                "".to_string(),
+                self.line,
+                self.start,
+                self.curr
+            ));
+        }
 
         // Adds the End of File token to mark the end of the source code
         self.tokens.push(Token::new(
@@ -241,6 +257,9 @@ impl Lexer {
         // Gets the next character of the source code
         let c = self.advance()?;
         let token: TokenType;
+
+        self.handle_indents();
+
         // Matches the character to a token, and moves along the source code if necessary in the
         // case of tokens like identifiers and literals. It also advances for double-character
         // operators so they are properly processed
@@ -252,10 +271,16 @@ impl Lexer {
             '[' => token = TokenType::LBrack,
             ']' => token = TokenType::RBrack,
             ',' => token = TokenType::Comma,
-            '.' => token = TokenType::Dot,
             ';' => token = TokenType::Semicolon,
             ':' => token = TokenType::Colon,
             '*' => token = TokenType::Asterisk,
+            '.' => {
+                if self.match_token('.') {
+                    token = TokenType::DotDot;
+                } else {
+                    token = TokenType::Dot;
+                }
+            },
             '-' => {
                 if self.match_token('-') {
                     token = TokenType::Decr;
@@ -299,11 +324,9 @@ impl Lexer {
                 }
             }
             '\r' => {
-                if self.match_token('\n') {
-                    self.line += 1;
-                    return Ok(());
-                }
+                self.match_token('\n');
                 self.line += 1;
+                self.is_new_line = true;
                 return Ok(());
             }
             ' ' | '\n' | '\t' => return Ok(()),
@@ -336,6 +359,48 @@ impl Lexer {
         }
         self.add_token(token);
         return Ok(());
+    }
+
+    fn handle_indents(&mut self) {
+        // Checks if there is a tab, which will be at the start of a line
+        if self.is_new_line {
+            let mut indent_count = 0;
+            while self.match_token('\t') {
+                indent_count += 1;
+            }
+            if indent_count > self.indent {
+                for _ in 0..indent_count - self.indent {
+                    self.tokens.push(Token::new(
+                        TokenType::Indent,
+                        "".to_string(),
+                        "".to_string(),
+                        self.line,
+                        self.start,
+                        self.curr
+                    ));
+                }
+            } else if indent_count < self.indent {
+                for _ in 0..self.indent - indent_count {
+                    if !self.is_at_end() {
+                        self.tokens.push(Token::new(
+                            TokenType::Dedent,
+                            "".to_string(),
+                            "".to_string(),
+                            self.line,
+                            self.start,
+                            self.curr
+                        ));
+                    }
+                }
+            }
+            if self.indent > 0 {
+                self.is_indented = true;
+            } else {
+                self.is_indented = false;
+            }
+            self.indent = indent_count;
+            self.is_new_line = false;
+        }
     }
 
     /// Advances to the next character in the program and returns it. If there are no more

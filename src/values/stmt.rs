@@ -9,17 +9,14 @@ use crate::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
-    Block {
-        statements: Vec<Stmt>,
-    },
     Expression {
         expression: Expr,
     },
     For {
-        initializer: Option<Box<Stmt>>,
+        initializer: Box<Stmt>,
         condition: Expr,
-        increment: Option<Expr>,
-        body: Box<Stmt>,
+        increment: Expr,
+        body: Vec<Stmt>,
     },
     Function {
         name: Token,
@@ -51,10 +48,9 @@ pub enum Stmt {
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Stmt::Block { statements } => write!(f, "Block({statements:?}"),
             Stmt::Expression { expression } => write!(f, "Expression({expression})"),
             Stmt::For { initializer, condition, increment, body } => {
-                return write!(f, "For({initializer:?} {condition} {increment:?} {body})");
+                return write!(f, "For({initializer:?} {condition} {increment:?} {body:?})");
             },
             Stmt::Function { name, params, body } => {
                 return write!(f, "Function({name} {params:?} {body:?})")
@@ -84,4 +80,4 @@ impl fmt::Display for Stmt {
     }
 }
 
-stmt_visitor!(Block, Expression, For, Function, If, Print, Return, Var, While);
+stmt_visitor!(Expression, For, Function, If, Print, Return, Var, While);

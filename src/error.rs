@@ -163,6 +163,41 @@ pub enum ParserError {
         line: usize,
     },
 
+    #[error("Expected an initializer in the for loop on line {line}")]
+    ExpectedInitializer {
+        line: usize
+    },
+
+    #[error("Expected the 'in' keyword on line {line}")]
+    ExpectedInAfterIdentifier {
+        line: usize
+    },
+
+    #[error("Expected '..' between the two ranges")]
+    ExpectedDotDot {
+        line: usize
+    },
+
+    #[error("Expected at the end of line {line}")]
+    ExpectedColon {
+        line: usize
+    },
+
+    #[error("Expected a body in the for loop on line {line}")]
+    ExpectedForBody {
+        line: usize
+    },
+
+    #[error("Expected a body in the if statement on line {line}")]
+    ExpectedIfBody {
+        line: usize
+    },
+
+    #[error("Expected a dedent on line {line}")]
+    ExpectedDedent {
+        line: usize
+    },
+
     #[error("Unknown parser error")]
     Unknown,
 }

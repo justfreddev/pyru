@@ -333,28 +333,6 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
 }
 
 impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
-    fn visit_block_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
-        match stmt {
-            Stmt::Block { statements } => {
-                self.begin_scope();
-
-                for statement in statements {
-                    statement.accept_stmt(self)?;
-                }
-
-                self.end_scope();
-
-                return Ok(());
-            }
-            _ => {
-                return Err(SemanticAnalyserError::DifferentStatement {
-                    stmt: stmt.clone(),
-                    expected: "block".to_string(),
-                })
-            }
-        }
-    }
-    
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Expression { expression } => {
@@ -378,17 +356,15 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 increment,
                 body,
             } => {
-                if let Some(initialiser) = initializer {
-                    initialiser.accept_stmt(self)?;
-                };
+                initializer.accept_stmt(self)?;
 
                 condition.accept_expr(self)?;
 
-                if let Some(incr) = increment {
-                    incr.accept_expr(self)?;
-                };
+                increment.accept_expr(self)?;
 
-                body.accept_stmt(self)?;
+                for stmt in body {
+                    stmt.accept_stmt(self)?;
+                }
 
                 return Ok(());
             }

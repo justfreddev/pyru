@@ -47,11 +47,7 @@
 //! 1. The parser evaluates the tokens one by one, and starts off by 
 
 use crate::{
-    error::ParserError,
-    expr::Expr,
-    stmt::Stmt,
-    token::{Token, TokenType},
-    value::LiteralType,
+    error::ParserError, expr::Expr, stmt::Stmt, token::{Token, TokenType}, value::LiteralType
 };
 
 pub struct Parser {
@@ -153,9 +149,17 @@ impl Parser {
 
         self.consume(TokenType::RParen, "ExpectedRParenAfterParameters")?;
 
-        self.consume(TokenType::LBrace, "ExpectedRParenAfterParameters")?;
+        self.consume(TokenType::Colon, "TODO: Expected colon after parameters")?;
 
-        let body = self.block()?;
+        self.consume(TokenType::Indent, "TODO: Expected function body")?;
+
+        let mut body = Vec::new();
+
+        while !self.check(TokenType::Dedent) && !self.is_at_end() {
+            let stmt = self.declaration()?;
+            body.push(stmt);
+        }
+        self.consume(TokenType::Dedent, "TODO: Expected a statement")?;
 
         return Ok(Stmt::Function { name, params, body });
     }
@@ -191,58 +195,79 @@ impl Parser {
         if self.match_token(vec![&TokenType::While]) {
             return self.while_statement();
         };
-        if self.match_token(vec![&TokenType::LBrace]) {
-            return Ok(Stmt::Block {
-                statements: self.block()?,
-            });
-        };
 
         return self.expression_statement();
     }
 
     fn for_statement(&mut self) -> Result<Stmt, ParserError> {
-        self.consume(TokenType::LParen, "ExpectedLParenAfterFor")?;
 
-        let initializer;
-        if self.match_token(vec![&TokenType::Semicolon]) {
-            initializer = None;
-        } else if self.match_token(vec![&TokenType::Var]) {
-            let var_declaration = self.var_declaration()?;
-            initializer = Some(Box::new(var_declaration));
-        } else {
-            let expr_stmt = self.expression_statement()?;
-            initializer = Some(Box::new(expr_stmt));
-        }
+        let name = self.consume(TokenType::Identifier, "ExpectedInitializer")?;
 
-        let condition = if !self.check(TokenType::Semicolon) {
-            self.expression()?
-        } else {
-            Expr::Literal { value: LiteralType::True }
+        self.consume(TokenType::In, "ExpectedInAfterIdentifier")?;
+
+        let start = self.expression()?;
+
+        self.consume(TokenType::DotDot, "ExpectedDotDot")?;
+
+        let end = self.expression()?;
+
+        self.consume(TokenType::Colon, "ExpectedColon")?;
+
+        self.consume(TokenType::Indent, "ExpectedForBody")?;
+
+        let initializer = Stmt::Var { name: name.clone(), initializer: Some(start) };
+
+        // let initializer;
+        // if self.match_token(vec![&TokenType::Semicolon]) {
+        //     initializer = None;
+        // } else if self.match_token(vec![&TokenType::Var]) {
+        //     let var_declaration = self.var_declaration()?;
+        //     initializer = Some(Box::new(var_declaration));
+        // } else {
+        //     let expr_stmt = self.expression_statement()?;
+        //     initializer = Some(Box::new(expr_stmt));
+        // }
+
+        let condition = Expr::Binary {
+            left: Box::new(Expr::Var { name: name.clone() }),
+            operator: Token::new(
+                TokenType::Less,
+                "<".to_string(),
+                "".to_string(),
+                0,
+                0,
+                0,
+            ),
+            right: Box::new(end),
         };
 
-        self.consume(TokenType::Semicolon, "ExpectedSemiColonAfterForCondition")?;
+        let increment = Expr::Alteration {
+            name,
+            alteration_type: TokenType::Incr,
+        };
 
-        let mut increment = None;
-        if !self.check(TokenType::RParen) {
-            increment = Some(self.expression()?);
+        let mut body = Vec::new();
+
+        while !self.check(TokenType::Dedent) && !self.is_at_end() {
+            let stmt = self.declaration()?;
+            body.push(stmt);
         }
-
-        self.consume(TokenType::RParen, "ExpectedRParenAfterForClauses")?;
-
-        let body = self.statement()?;
+        self.consume(TokenType::Dedent, "ExpectedDedent")?;
 
         return Ok(Stmt::For {
-            initializer,
+            initializer: Box::new(initializer),
             condition,
             increment,
-            body: Box::new(body),
+            body,
         });
     }
 
     fn if_statement(&mut self) -> Result<Stmt, ParserError> {
-        self.consume(TokenType::LParen, "ExpectedLParenAfterIf")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RParen, "ExpectedLParenAfterCondition")?;
+
+        self.consume(TokenType::Colon, "ExpectedColon")?;
+
+        self.consume(TokenType::Indent, "ExpectedIfBody")?;
 
         let then_branch = self.statement()?;
 
@@ -285,18 +310,6 @@ impl Parser {
         let body = self.statement()?;
 
         return Ok(Stmt::While { condition, body: Box::new(body) });
-    }
-
-    fn block(&mut self) -> Result<Vec<Stmt>, ParserError> {
-        let mut statements = Vec::new();
-
-        while !self.check(TokenType::RBrace) && !self.is_at_end() {
-            let stmt = self.declaration()?;
-            statements.push(stmt);
-        }
-        self.consume(TokenType::RBrace, "ExpectedRBraceAfterBlock")?;
-
-        return Ok(statements);
     }
 
     fn expression(&mut self) -> Result<Expr, ParserError> {
@@ -835,6 +848,48 @@ impl Parser {
                 let token = self.peek();
                 Err(ParserError::ExpectedRBrackAfterValues {
                     line: token.line,
+                })
+            },
+            "ExpectedInitialiser" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedInitializer {
+                    line: token.line,
+                })
+            },
+            "ExpectedInAfterIdentifier" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedInAfterIdentifier {
+                    line: token.line
+                })
+            },
+            "ExpectedDotDot" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedDotDot {
+                    line: token.line
+                })
+            },
+            "ExpectedColon" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedColon {
+                    line: token.line
+                })
+            },
+            "ExpectedForBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedForBody {
+                    line: token.line
+                })
+            },
+            "ExpectedIfBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedIfBody {
+                    line: token.line
+                })
+            },
+            "ExpectedDedent" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedDedent {
+                    line: token.line
                 })
             },
             _ => Err(ParserError::Unknown),

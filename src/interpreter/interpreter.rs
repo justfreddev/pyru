@@ -501,7 +501,10 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
 
     fn visit_var_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
-            Expr::Var { name } => return self.environment.borrow().get(name.clone()),
+            Expr::Var { name } => {
+                let x = self.environment.borrow().get(name.clone());
+                return x;
+            },
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "variable".to_string(),
@@ -511,28 +514,6 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
 }
 
 impl stmt::StmtVisitor<StmtResult> for Interpreter {
-    fn visit_block_stmt(&mut self, stmt: &Stmt) -> StmtResult {
-        match stmt {
-            Stmt::Block { statements } => {
-                match self.execute_block(
-                    statements.clone(),
-                    Rc::new(RefCell::new(Environment::new(Some(
-                        self.environment.clone(),
-                    )))),
-                ) {
-                    Ok(_) => {}
-                    Err(r) => return Err(Ok(r)?)
-                };
-                
-                return Ok(());
-            },
-            _ => return Err(Err(InterpreterError::DifferentStatement {
-                stmt: stmt.clone(),
-                expected: "block".to_string(),
-            })),
-        }
-    }
-
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::Expression { expression } => {
@@ -551,12 +532,16 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
     fn visit_for_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::For { initializer, condition, increment, body } => {
-                if initializer.is_some() {
-                    match self.execute(initializer.as_ref().unwrap()) {
-                        Ok(_) => {}
-                        Err(r) => return Err(Ok(r)?)
-                    };
-                }
+                match self.execute(initializer) {
+                    Ok(_) => {},
+                    Err(r) => return Err(Ok(r)?),
+                };
+                // if initializer.is_some() {
+                //     match self.execute(initializer.as_ref().unwrap()) {
+                //         Ok(_) => {}
+                //         Err(r) => return Err(Ok(r)?)
+                //     };
+                // }
                 let mut condition_evaluation = match self.evaluate(condition) {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
@@ -567,16 +552,17 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 };
                 
                 while condition_result {
-                    match self.execute(body) {
-                        Ok(_) => {}
-                        Err(r) => return Err(Ok(r)?)
-                    };
-                    if increment.is_some() {
-                        let _ = match self.evaluate(increment.as_ref().unwrap()) {
-                            Ok(v) => v,
-                            Err(e) => return Err(Err(e)),
+                    for stmt in body {
+                        match self.execute(stmt) {
+                            Ok(_) => {}
+                            Err(r) => return Err(Ok(r)?)
                         };
                     }
+                    match self.evaluate(increment) {
+                        Ok(v) => v,
+                        Err(e) => return Err(Err(e)),
+                    };
+
                     condition_evaluation = match self.evaluate(condition) {
                         Ok(v) => v,
                         Err(e) => return Err(Err(e)),

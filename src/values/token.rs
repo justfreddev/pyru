@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
-    LParen, RParen, LBrace, RBrace, LBrack, RBrack, Comma, Dot,
+    LParen, RParen, LBrace, RBrace, LBrack, RBrack, Comma, Dot, DotDot,
     Minus, Plus, Semicolon, Colon, FSlash, Asterisk, Incr, Decr,
 
     Bang, BangEqual, Equal, EqualEqual,
@@ -10,10 +10,10 @@ pub enum TokenType {
 
     Identifier, String, Num,
 
-    And, Class, Def, Else, False, For, If, Null, 
+    And, Class, Def, Else, False, For, If, In, Null, 
     Or, Print, Return, Super, This, True, Var, While,
 
-    Eof,
+    Eof, Indent, Dedent
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -50,6 +50,7 @@ impl fmt::Display for TokenType {
             TokenType::RBrack => write!(f, "RBrack"),
             TokenType::Comma => write!(f, "Comma"),
             TokenType::Dot => write!(f, "Dot"),
+            TokenType::DotDot => write!(f, "DotDot"),
             TokenType::Minus => write!(f, "Minus"),
             TokenType::Plus => write!(f, "Plus"),
             TokenType::Semicolon => write!(f, "Semicolon"),
@@ -76,6 +77,7 @@ impl fmt::Display for TokenType {
             TokenType::For => write!(f, "For"),
             TokenType::Def => write!(f, "Def"),
             TokenType::If => write!(f, "If"),
+            TokenType::In => write!(f, "In"),
             TokenType::Null => write!(f, "Null"),
             TokenType::Or => write!(f, "Or"),
             TokenType::Print => write!(f, "Print"),
@@ -86,6 +88,9 @@ impl fmt::Display for TokenType {
             TokenType::Var => write!(f, "var"),
             TokenType::While => write!(f, "While"),
             TokenType::Eof => write!(f, "Eof"),
+            TokenType::Indent => write!(f, "Indent"),
+            TokenType::Dedent => write!(f, "Dedent"),
+
         }
     }
 }
