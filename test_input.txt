@@ -1,65 +1,63 @@
 // Prints 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 var a = "test";
-print hash(a);
+print(hash(a));
 
 var a = [23, 25, 23, 92, 83, 53, 69, 52, 61, 59, 70, 68, 50, 19, 84, 12, 17, 33, 26, 26, 7, 82, 90, 82, 21, 96, 54, 21, 65, 83, 3, 26, 47, 69, 16, 5, 46, 23, 79, 49, 62, 68, 70, 11, 94, 35, 93, 74, 33, 80, 7, 47, 86, 75, 59, 61, 44, 71, 12, 21, 79, 71, 54, 84, 99, 69, 92, 83, 28, 24, 71, 20, 94, 41, 67, 15, 40, 4, 12, 79, 22, 53, 41, 59, 18, 41, 42, 75, 65, 8, 1, 45, 42, 28, 73, 7, 30, 17, 23, 1];
 print a.sort();
 
 // Appends an incrementing number to the list and prints it out each time
 var items = [];
-for (var i = 0; i < 1000; i++) {
+for i in 0..1000:
   items.push(i);
-  print items;
-}
+  print(items);
 
 // Prints 4 4
 var items = ["apple", "banana", "cherry", "pineapple"];
-print items.index("pineapple") + 1;
-print items.len();
+print(items.index("pineapple") + 1);
+print(items.len());
 
 // All print ["apple", "banana", "cherry", "pineapple"]
 var items = ["banana", "cherry", "pineapple"];
 items.insertAt(0, "apple");
-print items;
+print(items);
 
 var items = ["apple", "banana", "cherry", "orange", "pineapple"];
 items.remove(3);
-print items;
+print(items);
 
 var items = ["apple", "banana", "cherry", "pineapple", "tomato"];
 items.pop();
-print items;
+print(items);
 
 var items = ["apple", "banana", "cherry"];
 items.push("pineapple");
-print items;
+print(items);
 
 
 // Prints apple banana cherry
 var items = ["apple", "banana", "cherry"];
-for (var i = 0; i < 3; i++) {
-  print items[i];
-}
+for i in 0..items.len():
+  print(items[i]);
 
 
 // Prints [1, 2]
 var list = [1, 2, 3];
-print list[:1];
+print(list[:1]);
 
 // Prints [2, 3]
 var list = [1, 2, 3];
-print list[1:];
+print(list[1:]);
 
 
 // Prints [1, 2, 3]
 var list = [1, 2, 3];
-print list[0:2];
+print(list[0:2]);
 
 
 // Prints [1, 2, 3, true]
 var a = 3;
 var list = ["1", 2, a, true];
-print list;
+print(list);
 
 
 // Prints 1, 2
@@ -67,7 +65,7 @@ def makeCounter() {
   var i = 0;
   def count() {
     i++;
-    print i;
+    print(i);
   }
   return count;
 }
@@ -78,18 +76,19 @@ counter();
 
 // Prints out nth fibonacci number up to n=20
 def fib(n) {
-  if (n <= 1) return n;
+  if n <= 1:
+    return n;
   return fib(n - 2) + fib(n - 1);
 }
-for (var i = 0; i < 20; i++) {
-  print fib(i);
-}
+for i in 0..20:
+  print(fib(i));
 
 
 // Prints out 5, 4, 3, 2, 1, 0
 def recursion(x) {
-  print x;
-  if (x == 0) return x;
+  print(x);
+  if x == 0:
+    return x;
   return recursion(x - 1);
 }
 recursion(5);
@@ -100,27 +99,26 @@ def add(a, b) {
   return a + b;
 }
 var a = 1;
-for (var i = 0; i < 10; i++) {
-  print add(a, i);
-}
+for i in 0..10:
+  print(add(a, i));
 
 
 // Prints 3
 def add(a, b) {
   return a + b;
 }
-print add(1, 2);
+print(add(1, 2));
 
 
 // Prints 3
 def add(a, b) {
-  print a + b;
+  print(a + b);
 }
 add(1, 2);
 
 
 // Prints 3
 def t(a) {
-  print a;
+  print(a);
 }
 t(3);

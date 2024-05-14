@@ -16,15 +16,12 @@ statement -> expressionStatement
            | block ;
 
 expressionStatement -> expression ";" ;
-forStatement -> "for" "(" ( variableDeclaration | expressionStatement | ";" )
-                          expression? ";"
-                          expression? ")" statement ;
-ifStatement -> "if" "(" expression ") statement
+forStatement -> "for" IDENTIFIER "in" expression ".." expression ":" statement
+ifStatement -> "if" expression ":" (statement)*
                 ( "else" statement )? ;
-printStatement -> "print" expression ";" ;
+printStatement -> "print(" expression ");" ;
 returnStatement -> "return" expression? ";" ;
-whileStatement -> "while" "(" expression ")" statement ;
-block -> "{" declaration* "}" ;
+whileStatement -> "while" expression ":" (statement)* ;
 
 expression -> assignment ;
 
@@ -41,7 +38,7 @@ unary -> ( "!" | "-" ) | call ;
 call -> primary "(" arguments? ")" ;
 primary -> "true" | "false" | "null" | NUMBER | STRING | IDENTIFIER | "(" expression ")" ;
 
-function -> IDENTIFIER "(" parameters? ")" block ;
+function -> IDENTIFIER "(" parameters? ")" ":" (statement)* ;
 parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
 arguments -> IDENTIFIER ( "," expression )* ;
 
@@ -50,3 +47,4 @@ STRING -> "\"" <any char except "\"">* "\"" ;
 IDENTIFIER -> ALPHA ( ALPHA | DIGIT )* ;
 ALPHA -> "a" ... "z" | "A" ... "Z" | "_" ;
 DIGIT -> "0" ... "9" ;
+

@@ -15,10 +15,6 @@ pub fn run(source: &str) {
         }
     };
 
-    for token in &tokens {
-        println!("{token}");
-    }
-
     let mut parser = Parser::new(tokens);
     let ast = match parser.parse() {
         Ok(ast) => ast,

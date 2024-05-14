@@ -56,7 +56,7 @@ impl Func {
 }
 
 impl Callable for Func {
-    fn call(&self, interpreter: &mut crate::interpreter::Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
+    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
         match &self.declaration {
             Stmt::Function { name: _, params, body } => {
                 let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(

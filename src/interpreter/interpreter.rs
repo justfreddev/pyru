@@ -24,14 +24,14 @@ pub type StmtResult = Result<(), ExprResult>;
 pub type Env = Rc<RefCell<Environment>>;
 
 pub struct Interpreter {
-    pub globals: Env,
     pub environment: Env,
+    pub globals: Env,
     test_output: Vec<String>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        let global = Rc::new(RefCell::new(Environment::new(None)));
+        let globals = Rc::new(RefCell::new(Environment::new(None)));
 
         let clock = NativeFunc::new("clock".to_string(), 0, |_, _| {
             Ok(Value::Literal(LiteralType::Num(
@@ -51,12 +51,12 @@ impl Interpreter {
             return Err(InterpreterError::CannotHashValue);
         });
 
-        global.borrow_mut().define("clock".to_string(), Value::NativeFunction(clock));
-        global.borrow_mut().define("hash".to_string(), Value::NativeFunction(hash));
+        globals.borrow_mut().define("clock".to_string(), Value::NativeFunction(clock));
+        globals.borrow_mut().define("hash".to_string(), Value::NativeFunction(hash));
 
         return Self {
-            globals: Rc::clone(&global),
-            environment: Rc::clone(&global),
+            environment: Rc::clone(&globals),
+            globals,
             test_output: Vec::new()
         };
     }
@@ -119,7 +119,7 @@ impl Interpreter {
         return *a == *b;
     }
 
-    fn stringify(&self, object: LiteralType) -> String {
+    fn stringify(&self, object: &LiteralType) -> String {
         return match object {
             LiteralType::Num(n) => {
                 let mut text = n.to_string();
@@ -128,7 +128,7 @@ impl Interpreter {
                 }
                 text
             }
-            LiteralType::Str(s) => s,
+            LiteralType::Str(s) => s.clone(),
             LiteralType::True => "true".to_string(),
             LiteralType::False => "false".to_string(),
             LiteralType::Null => "null".to_string(),
@@ -139,7 +139,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
     fn visit_alteration_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Alteration { name, alteration_type } => {
-                let curr_value = self.environment.borrow().get(name.clone())?;
+                let curr_value = self.environment.borrow().get(name)?;
 
                 match alteration_type {
                     TokenType::Incr => {
@@ -165,7 +165,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
 
                 return self.environment
                     .borrow_mut()
-                    .assign(name.clone(), value.clone());
+                    .assign(name, value);
             }
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
@@ -314,7 +314,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                             args.push(arg);
                         }
 
-                        let list = self.environment.borrow().get(object.clone())?;
+                        let list = self.environment.borrow().get(object)?;
                         let mut result_value: Option<Value> = None;
                         let new_list;
 
@@ -340,7 +340,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                                 _ => return Err(InterpreterError::InvalidListMethod)
                             };
 
-                            self.environment.borrow_mut().assign(object.clone(), Value::List(new_list.clone()))?;
+                            self.environment.borrow_mut().assign(object, Value::List(new_list.clone()))?;
                             if let Some(v) = result_value {
                                 return Ok(v);
                             }
@@ -417,9 +417,9 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 let mut start_idx: usize = 0;
                 let mut end_idx: Option<usize> = None;
 
-                if let Some(Value::Literal(v)) = start_idx_expr.clone() {
+                if let Some(Value::Literal(ref v)) = start_idx_expr {
                     if let LiteralType::Num(num) = v {
-                        start_idx = num as usize;
+                        start_idx = *num as usize;
                     } else {
                         return Err(InterpreterError::ExpectedIndexToBeANum);
                     }
@@ -437,7 +437,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     return Err(InterpreterError::ExpectedIndexToBeANum)
                 }
 
-                let value = self.environment.borrow().get(list.clone())?;
+                let value = self.environment.borrow().get(list)?;
 
                 if let Value::List(list) = value {
                     if let Some(end_idx) = end_idx {
@@ -502,8 +502,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
     fn visit_var_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Var { name } => {
-                let x = self.environment.borrow().get(name.clone());
-                return x;
+                return self.environment.borrow().get(name);
             },
             _ => return Err(InterpreterError::DifferentExpression {
                 expr: expr.clone(),
@@ -517,9 +516,9 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::Expression { expression } => {
-                match self.evaluate(&expression.clone()) {
-                    Ok(_) => return Ok(()), // MAY NEED TO CHANGE
-                    Err(e) => return Err(Err(e)),
+                return match self.evaluate(expression) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(Err(e)),
                 }
             }
             _ => return Err(Err(InterpreterError::DifferentStatement {
@@ -650,8 +649,8 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 };
                 match value {
                     Value::Literal(literal) => {
-                        println!("{}", self.stringify(literal.clone()));
-                        self.test_output.push(self.stringify(literal));
+                        println!("{}", self.stringify(&literal));
+                        self.test_output.push(self.stringify(&literal));
                         return Ok(());
                     },
                     Value::List(list) => {

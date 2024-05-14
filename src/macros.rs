@@ -34,7 +34,7 @@ macro_rules! alteration {
     ( $self:ident ; $operator:tt ; $name:expr ; $value:expr ) => {
         if let Value::Literal(LiteralType::Num(n)) = $value {
             return $self.environment.borrow_mut().assign(
-                $name.clone(), Value::Literal(LiteralType::Num(n $operator 1.0))
+                $name, Value::Literal(LiteralType::Num(n $operator 1.0))
             );
         };
         return Err(InterpreterError::ExpectedNumber);

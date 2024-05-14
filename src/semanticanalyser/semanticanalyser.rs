@@ -316,7 +316,10 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                     return Ok(());
                 }
 
-                if name.lexeme == "hash" || name.lexeme == "clock" {
+                let keywords = vec!["hash", "clock", "push", "pop", "remove",
+                "insertAt", "index", "len", "sort"];
+
+                if keywords.contains(&name.lexeme.as_str()) {
                     return Ok(());
                 }
 

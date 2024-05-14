@@ -30,7 +30,7 @@ impl Environment {
         self.values.insert(name, Rc::new(RefCell::new(value)));
     }
 
-    pub fn get(&self, name: Token) -> Result<Value, InterpreterError> {
+    pub fn get(&self, name: &Token) -> Result<Value, InterpreterError> {
         return match self.values.get(&name.lexeme) {
             Some(v) => Ok(v.borrow().clone()),
             None => {
@@ -38,7 +38,7 @@ impl Environment {
                     return enclosing.borrow().get(name);
                 } else {
                     return Err(InterpreterError::UndefinedVariable {
-                        name: name.lexeme,
+                        name: name.lexeme.clone(),
                         start: name.start,
                         end: name.end,
                         line: name.line,
@@ -48,19 +48,19 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: Token, value: Value) -> Result<Value, InterpreterError> {
+    pub fn assign(&mut self, name: &Token, value: Value) -> Result<Value, InterpreterError> {
         if self.values.contains_key(&name.lexeme) {
             self.values
-                .insert(name.lexeme, Rc::new(RefCell::new(value.clone())));
+                .insert(name.lexeme.clone(), Rc::new(RefCell::new(value.clone())));
             return Ok(value);
         }
 
         if let Some(enclosing) = &self.enclosing {
-            return enclosing.borrow_mut().assign(name.clone(), value);
+            return enclosing.borrow_mut().assign(name, value);
         }
 
         return Err(InterpreterError::UndefinedVariable {
-            name: name.lexeme,
+            name: name.lexeme.clone(),
             start: name.start,
             end: name.end,
             line: name.line
