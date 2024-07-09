@@ -205,6 +205,30 @@ impl Parser {
 
         let end = self.expression()?;
 
+        let step = if self.match_token(vec![&TokenType::Step]) {
+            Expr::Assign {
+                name: name.clone(),
+                value: Box::new(Expr::Binary {
+                    left: Box::new(Expr::Var { name: name.clone() }),
+                    operator: Token::new(
+                        TokenType::Plus,
+                        "+".to_string(),
+                        "".to_string(),
+                        0,
+                        0,
+                        0,
+                    ),
+                    right: Box::new(self.expression()?)
+                })
+            }
+            
+        } else {
+            Expr::Alteration {
+                name: name.clone(),
+                alteration_type: TokenType::Incr,
+            }
+        };
+
         self.consume(TokenType::Colon, "ExpectedColon")?;
 
         self.consume(TokenType::Indent, "ExpectedForBody")?;
@@ -224,17 +248,12 @@ impl Parser {
             right: Box::new(end),
         };
 
-        let increment = Expr::Alteration {
-            name,
-            alteration_type: TokenType::Incr,
-        };
-
         let body = self.body()?;
 
         return Ok(Stmt::For {
             initializer: Box::new(initializer),
             condition,
-            increment,
+            step,
             body,
         });
     }
@@ -707,8 +726,7 @@ impl Parser {
             };
 
             match self.peek().token_type {
-                TokenType::Class
-                | TokenType::Def
+                TokenType::Def
                 | TokenType::Var
                 | TokenType::For
                 | TokenType::If

@@ -98,8 +98,8 @@ impl Lexer {
         let mut kw: HashMap<String, TokenType> = HashMap::new();
         keywords!(
             kw;
-            And, Class, Def, Else, False, For, If, In, Null,
-            Or, Print, Return, Super, This, True, Var, While
+            And, Def, Else, False, For, If, In, Null,
+            Or, Print, Return, Step, True, Var, While
         );
 
         return Self {

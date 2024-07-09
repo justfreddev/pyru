@@ -356,14 +356,14 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
             Stmt::For {
                 initializer,
                 condition,
-                increment,
+                step,
                 body,
             } => {
                 initializer.accept_stmt(self)?;
 
                 condition.accept_expr(self)?;
 
-                increment.accept_expr(self)?;
+                step.accept_expr(self)?;
 
                 for stmt in body {
                     stmt.accept_stmt(self)?;

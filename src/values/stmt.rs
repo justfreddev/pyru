@@ -15,7 +15,7 @@ pub enum Stmt {
     For {
         initializer: Box<Stmt>,
         condition: Expr,
-        increment: Expr,
+        step: Expr,
         body: Vec<Stmt>,
     },
     Function {
@@ -49,8 +49,8 @@ impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stmt::Expression { expression } => write!(f, "Expression({expression})"),
-            Stmt::For { initializer, condition, increment, body } => {
-                return write!(f, "For({initializer:?} {condition} {increment:?} {body:?})");
+            Stmt::For { initializer, condition, step, body } => {
+                return write!(f, "For({initializer:?} {condition} {step:?} {body:?})");
             },
             Stmt::Function { name, params, body } => {
                 return write!(f, "Function({name} {params:?} {body:?})")

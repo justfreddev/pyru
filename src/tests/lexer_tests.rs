@@ -111,11 +111,10 @@ fn test_comments() {
 fn test_keywords() {
     assert_eq!(
         lex(
-            "and class def else false for if null or print return super this true var while"
+            "and class def else false for if null or print return step true var while"
         ),
         vec![
             token!(And ; "and" ; "" ; 1 ; 0 ; 3),
-            token!(Class ; "class" ; "" ; 1 ; 4 ; 9),
             token!(Def ; "def" ; "" ; 1 ; 10 ; 13),
             token!(Else ; "else" ; "" ; 1 ; 14 ; 18),
             token!(False ; "false" ; "" ; 1 ; 19 ; 24),
@@ -125,12 +124,11 @@ fn test_keywords() {
             token!(Or ; "or" ; "" ; 1 ; 37 ; 39),
             token!(Print ; "print" ; "" ; 1 ; 40 ; 45),
             token!(Return ; "return" ; "" ; 1 ; 46 ; 52),
-            token!(Super ; "super" ; "" ; 1 ; 53 ; 58),
-            token!(This ; "this" ; "" ; 1 ; 59 ; 63),
-            token!(True ; "true" ; "" ; 1 ; 64 ; 68),
-            token!(Var ; "var" ; "" ; 1 ; 69 ; 72),
-            token!(While ; "while" ; "" ; 1 ; 73 ; 78),
-            token!(Eof ; "" ; "" ; 1 ; 78 ; 78)
+            token!(Step ; "step" ; "" ; 1 ; 53 ; 57),
+            token!(True ; "true" ; "" ; 1 ; 58 ; 62),
+            token!(Var ; "var" ; "" ; 1 ; 63 ; 66),
+            token!(While ; "while" ; "" ; 1 ; 67 ; 72),
+            token!(Eof ; "" ; "" ; 1 ; 73 ; 73)
         ]
     );
 }

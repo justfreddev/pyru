@@ -530,17 +530,12 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
     fn visit_for_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
-            Stmt::For { initializer, condition, increment, body } => {
+            Stmt::For { initializer, condition, step, body } => {
                 match self.execute(initializer) {
                     Ok(_) => {},
                     Err(r) => return Err(Ok(r)?),
                 };
-                // if initializer.is_some() {
-                //     match self.execute(initializer.as_ref().unwrap()) {
-                //         Ok(_) => {}
-                //         Err(r) => return Err(Ok(r)?)
-                //     };
-                // }
+
                 let mut condition_evaluation = match self.evaluate(condition) {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
@@ -557,11 +552,12 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                             Err(r) => return Err(Ok(r)?)
                         };
                     }
-                    match self.evaluate(increment) {
-                        Ok(v) => v,
+
+                    match self.evaluate(step) {
+                        Ok(_) => {},
                         Err(e) => return Err(Err(e)),
                     };
-
+                    
                     condition_evaluation = match self.evaluate(condition) {
                         Ok(v) => v,
                         Err(e) => return Err(Err(e)),
