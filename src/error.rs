@@ -6,19 +6,19 @@ use crate::{ expr::Expr, stmt::Stmt };
 pub enum LexerError {
     // Occurs when '"' is found, but there is not another one to close the string
     #[error("Unterminated string on line {line}")]
-    UnterminatedString { line: usize },
+    UnterminatedString { line: usize, start: usize, end: usize },
 
     // Occurs when an unrecognised character is found
     #[error("Unexpected character '{c}' on line {line}")]
-    UnexpectedCharacter { c: char, line: usize },
+    UnexpectedCharacter { c: char, line: usize, start: usize, end: usize },
 
     // Occurs when the lexer expects another character but there are no more
     #[error("No more characters left on line {line}")]
-    NoCharactersLeft { line: usize },
+    NoCharactersLeft { line: usize, start: usize, end: usize },
 
     // Occurs when the lexer reaches the end of the source but still expects another character
     #[error("Cannot peek when at the end of the source string on line {line}")]
-    CannotPeekAtTheEnd { line: usize }
+    CannotPeekAtTheEnd { line: usize, start: usize, end: usize }
 }
 
 #[derive(Error, Debug)]
@@ -193,18 +193,9 @@ pub enum ParserError {
         line: usize
     },
 
-    #[error("Expected a body in the for loop on line {line}")]
-    ExpectedForBody {
-        line: usize
-    },
-
-    #[error("Expected a body in the if statement on line {line}")]
-    ExpectedIfBody {
-        line: usize
-    },
-
-    #[error("Expected a body in the while loop on line {line}")]
-    ExpectWhileBody {
+    #[error("Expected a body in the {type_} loop on line {line}")]
+    ExpectedBody {
+        type_: String,
         line: usize
     },
 

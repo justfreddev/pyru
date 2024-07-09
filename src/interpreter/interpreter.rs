@@ -20,7 +20,7 @@ use crate::{
 };
 
 pub type ExprResult = Result<Value, InterpreterError>;
-pub type StmtResult = Result<(), ExprResult>;
+pub type StmtResult = Result<(), Result<Value, InterpreterError>>;
 pub type Env = Rc<RefCell<Environment>>;
 
 pub struct Interpreter {

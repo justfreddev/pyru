@@ -868,13 +868,22 @@ impl Parser {
             },
             "ExpectedForBody" => {
                 let token = self.peek();
-                Err(ParserError::ExpectedForBody {
+                Err(ParserError::ExpectedBody {
+                    type_: "for".to_string(),
                     line: token.line
                 })
             },
             "ExpectedIfBody" => {
                 let token = self.peek();
-                Err(ParserError::ExpectedIfBody {
+                Err(ParserError::ExpectedBody {
+                    type_: "if".to_string(),
+                    line: token.line
+                })
+            },
+            "ExpectedWhileBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedBody {
+                    type_: "while".to_string(),
                     line: token.line
                 })
             },
@@ -902,12 +911,6 @@ impl Parser {
                     line: token.line
                 })
             },
-            "ExpectWhileBody" => {
-                let token = self.peek();
-                Err(ParserError::ExpectWhileBody {
-                    line: token.line
-                })
-            }
             _ => Err(ParserError::Unknown),
         }
     }

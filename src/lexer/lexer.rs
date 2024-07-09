@@ -197,13 +197,21 @@ impl Lexer {
     fn string(&mut self) -> Result<(), LexerError> {
         while self.peek()? != '"' && !self.is_at_end() {
             if self.peek()? == '\n' {
-                return Err(LexerError::UnterminatedString { line: self.line });
+                return Err(LexerError::UnterminatedString {
+                    line: self.line,
+                    start: self.start,
+                    end: self.curr
+                });
             }
             self.advance()?;
         }
 
         if self.is_at_end() {
-            return Err(LexerError::UnterminatedString { line: self.line });
+            return Err(LexerError::UnterminatedString { 
+                line: self.line,
+                start: self.start,
+                end: self.curr
+            });
         }
 
         self.advance()?;
@@ -352,7 +360,12 @@ impl Lexer {
                 } else if self.is_alpha(c) {
                     self.identifier()?;
                 } else {
-                    return Err(LexerError::UnexpectedCharacter { c, line: self.line });
+                    return Err(LexerError::UnexpectedCharacter {
+                        c,
+                        line: self.line,
+                        start: self.start,
+                        end: self.curr
+                    });
                 }
                 return Ok(());
             }
@@ -410,7 +423,11 @@ impl Lexer {
             self.curr += 1;
             Ok(c)
         } else {
-            Err(LexerError::NoCharactersLeft { line: self.line })
+            Err(LexerError::NoCharactersLeft {
+                line: self.line,
+                start: self.start,
+                end: self.curr
+            })
         };
     }
 
@@ -419,7 +436,11 @@ impl Lexer {
     /// `LexerError::CannotPeekAtTheEnd`
     fn peek(&self) -> Result<char, LexerError> {
         if self.is_at_end() {
-            return Err(LexerError::CannotPeekAtTheEnd { line: self.line });
+            return Err(LexerError::CannotPeekAtTheEnd {
+                line: self.line,
+                start: self.start,
+                end: self.curr
+            });
         }
         return Ok(self.source.chars().nth(self.curr).unwrap());
     }
@@ -428,7 +449,11 @@ impl Lexer {
     /// at the end of the source code, otherwise it will return `LexerError::CannotPeekAtTheEnd`
     fn peek_next(&self) -> Result<char, LexerError> {
         if self.curr + 1 >= self.source.len() {
-            return Err(LexerError::NoCharactersLeft { line: self.line });
+            return Err(LexerError::NoCharactersLeft {
+                line: self.line,
+                start: self.start,
+                end: self.curr
+            });
         }
         return Ok(self.source.chars().nth(self.curr + 1).unwrap());
     }
