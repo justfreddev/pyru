@@ -10,8 +10,8 @@ pub enum TokenType {
 
     Identifier, String, Num,
 
-    And, Def, Else, False, For, If, In, Null, 
-    Or, Print, Return, Step, True, Var, While,
+    And, Def, Else, False, For, If, In, Let, Null, 
+    Or, Print, Return, Step, True, While,
 
     Eof, Indent, Dedent
 }
@@ -77,13 +77,13 @@ impl fmt::Display for TokenType {
             TokenType::Def => write!(f, "Def"),
             TokenType::If => write!(f, "If"),
             TokenType::In => write!(f, "In"),
+            TokenType::Let => write!(f, "Let"),
             TokenType::Null => write!(f, "Null"),
             TokenType::Or => write!(f, "Or"),
             TokenType::Print => write!(f, "Print"),
             TokenType::Return => write!(f, "Return"),
             TokenType::Step => write!(f, "Step"),
             TokenType::True => write!(f, "True"),
-            TokenType::Var => write!(f, "var"),
             TokenType::While => write!(f, "While"),
             TokenType::Eof => write!(f, "Eof"),
             TokenType::Indent => write!(f, "Indent"),

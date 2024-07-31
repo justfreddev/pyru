@@ -82,7 +82,7 @@ impl Parser {
                     Err(e)
                 }
             }
-        } else if self.match_token(vec![&TokenType::Var]) {
+        } else if self.match_token(vec![&TokenType::Let]) {
             return match self.var_declaration() {
                 Ok(v) => Ok(v),
                 Err(e) => {
@@ -727,7 +727,7 @@ impl Parser {
 
             match self.peek().token_type {
                 TokenType::Def
-                | TokenType::Var
+                | TokenType::Let
                 | TokenType::For
                 | TokenType::If
                 | TokenType::While
