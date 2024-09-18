@@ -1,0 +1,17 @@
+source = {statement} ;
+
+
+
+ifStatement = "if" , expression , ":" , indent , {statement} , dedent , {elifStatement} , [elseStatement] ;
+    elifStatement = "elif" , expression , ":" , indent , {statement} , dedent ;
+    elseStatement = "else" , ":" , indent , {statement} , dedent ;
+
+whileStatement = "while" , expression , ":" , indent , {statement} , dedent ;
+
+forStatement = "for" , identifier , "in" , expression , ["step" , expression] , ":" , indent , {statement} , dedent ;
+
+functionStatement = "def" , identifier , "(" , [identifier , {"," , identifier}] , ")" , ":" , indent , {statement} , dedent ;
+
+returnStatement = "return" , [expression] ;
+
+printStatement = "print" , "(" , expression , ")" ;
