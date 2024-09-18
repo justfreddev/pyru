@@ -18,7 +18,10 @@ pub enum LexerError {
 
     // Occurs when the lexer reaches the end of the source but still expects another character
     #[error("Cannot peek when at the end of the source string on line {line}")]
-    CannotPeekAtTheEnd { line: usize, start: usize, end: usize }
+    CannotPeekAtTheEnd { line: usize, start: usize, end: usize },
+
+    #[error("Incorrect indentation on line {line}")]
+    IncorrectIndentation { line: usize }
 }
 
 #[derive(Error, Debug)]

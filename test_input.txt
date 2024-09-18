@@ -1,5 +1,8 @@
 for i in 0..10 step 2:
   print(i);
+print(1);
+
+
 
 // Prints 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 var a = "test";
@@ -78,11 +81,10 @@ counter();
 
 
 // Prints out nth fibonacci number up to n=20
-def fib(n) {
+def fib(n):
   if n <= 1:
     return n;
   return fib(n - 2) + fib(n - 1);
-}
 for i in 0..20:
   print(fib(i));
 

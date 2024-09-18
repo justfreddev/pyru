@@ -64,7 +64,11 @@ fn repl() -> String {
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut temp_source).unwrap();
         if temp_source.trim().eq("run") || temp_source.trim().eq("") {
-            return source;
+            return source
+                .chars()
+                .collect::<Vec<char>>()[0..source.len()-3]
+                .iter()
+                .collect::<String>();
         }
         temp_source.push('\n');
         source.push_str(&temp_source);
@@ -95,7 +99,8 @@ fn _make_cors() -> Cors {
 
 #[post("/runcode", format = "json", data = "<message>")]
 fn _run_code(message: Json<Message>) -> Json<String> {
-    let output = run(message.source.as_str());
+    let debug = false;
+    let output = run(message.source.as_str(), debug);
 
     Json(format!("{:?}", output))
 }
@@ -110,5 +115,7 @@ fn _run_code(message: Json<Message>) -> Json<String> {
 fn main() {
     let source = repl();
 
-    run(source.as_str());
+    let debug = true;
+
+    let _ = run(source.as_str(), debug);
 }
