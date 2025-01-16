@@ -5,15 +5,15 @@ use std::{
 };
 
 use crate::{
-    enviromnent::Environment,
-    error::InterpreterError,
-    interpreter::{Env, Interpreter},
+    environment::Environment,
+    error::EvaluatorError,
+    evaluator::{Env, Evaluator},
     stmt::Stmt,
     value::{LiteralType, Value},
 };
 
 pub trait Callable {
-    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError>;
+    fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError>;
 }
 
 #[derive(Clone, Debug)]
@@ -40,7 +40,7 @@ impl PartialOrd for Func {
 }
 
 impl Func {
-    pub fn new(declaration: Stmt, closure: Env) -> Result<Self, InterpreterError> {
+    pub fn new(declaration: Stmt, closure: Env) -> Result<Self, EvaluatorError> {
         match &declaration {
             Stmt::Function { name, params, .. } => {
                 return Ok(Self {
@@ -50,13 +50,13 @@ impl Func {
                     closure,
                 });
             },
-            _ => return Err(InterpreterError::ExpectedFunctionStatementForDeclaration),
+            _ => return Err(EvaluatorError::ExpectedFunctionStatementForDeclaration),
         }
     }
 }
 
 impl Callable for Func {
-    fn call(&self, interpreter: &mut crate::interpreter::Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
+    fn call(&self, evaluator: &mut crate::evaluator::Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError> {
         match &self.declaration {
             Stmt::Function { name: _, params, body } => {
                 let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
@@ -69,12 +69,12 @@ impl Callable for Func {
                         .define(params[i].lexeme.clone(), arguments[i].clone());
                 }
 
-                return match interpreter.execute_block(body.clone(), environment) {
+                return match evaluator.execute_block(body.clone(), environment) {
                     Ok(_) => Ok(Value::Literal(LiteralType::Null)),
                     Err(r) => Ok(r?)
                 }
             }
-            _ => return Err(InterpreterError::ExpectedDeclarationToBeAFunction),
+            _ => return Err(EvaluatorError::ExpectedDeclarationToBeAFunction),
         }
     }
 }
@@ -83,18 +83,18 @@ impl Callable for Func {
 pub struct NativeFunc {
     name: String,
     pub arity: usize,
-    fun: fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>,
+    fun: fn(&mut Evaluator, Vec<Value>) -> Result<Value, EvaluatorError>,
 }
 
 impl NativeFunc {
-    pub fn new(name: String, arity: usize, fun: fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>) -> Self {
+    pub fn new(name: String, arity: usize, fun: fn(&mut Evaluator, Vec<Value>) -> Result<Value, EvaluatorError>) -> Self {
         return Self { name, arity, fun };
     }
 }
 
 impl Callable for NativeFunc {
-    fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, InterpreterError> {
-        return (self.fun)(interpreter, arguments);
+    fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError> {
+        return (self.fun)(evaluator, arguments);
     }
 }
 

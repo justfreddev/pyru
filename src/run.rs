@@ -1,5 +1,5 @@
 use crate::{
-    interpreter::Interpreter,
+    evaluator::Evaluator,
     lexer::Lexer,
     parser::Parser,
     semanticanalyser::SemanticAnalyser
@@ -33,8 +33,8 @@ pub fn run(source: &str) {
         }
     }
 
-    let mut interpreter = Interpreter::new();
-    match interpreter.interpret(ast) {
+    let mut interpreter = Evaluator::new();
+    match interpreter.evaluate(ast) {
         Ok(_) => {},
         Err(e) => {
             eprintln!("An interpreter error occured: {e}");

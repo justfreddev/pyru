@@ -1,10 +1,10 @@
 mod error;
 
-#[path = "./interpreter/environment.rs"]
-mod enviromnent;
+#[path = "./evaluator/environment.rs"]
+mod environment;
 
-#[path = "./interpreter/interpreter.rs"]
-mod interpreter;
+#[path = "./evaluator/evaluator.rs"]
+mod evaluator;
 
 #[path = "./lexer/lexer.rs"]
 mod lexer;

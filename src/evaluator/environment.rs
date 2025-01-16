@@ -6,8 +6,8 @@ use std::{
 };
 
 use crate::{
-    error::InterpreterError,
-    interpreter::Env,
+    error::EvaluatorError,
+    evaluator::Env,
     token::Token,
     value::Value,
 };
@@ -30,14 +30,14 @@ impl Environment {
         self.values.insert(name, Rc::new(RefCell::new(value)));
     }
 
-    pub fn get(&self, name: Token) -> Result<Value, InterpreterError> {
+    pub fn get(&self, name: Token) -> Result<Value, EvaluatorError> {
         return match self.values.get(&name.lexeme) {
             Some(v) => Ok(v.borrow().clone()),
             None => {
                 if let Some(enclosing) = &self.enclosing {
                     return enclosing.borrow().get(name);
                 } else {
-                    return Err(InterpreterError::UndefinedVariable {
+                    return Err(EvaluatorError::UndefinedVariable {
                         name: name.lexeme,
                         start: name.start,
                         end: name.end,
@@ -48,7 +48,7 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: Token, value: Value) -> Result<Value, InterpreterError> {
+    pub fn assign(&mut self, name: Token, value: Value) -> Result<Value, EvaluatorError> {
         if self.values.contains_key(&name.lexeme) {
             self.values
                 .insert(name.lexeme, Rc::new(RefCell::new(value.clone())));
@@ -59,7 +59,7 @@ impl Environment {
             return enclosing.borrow_mut().assign(name.clone(), value);
         }
 
-        return Err(InterpreterError::UndefinedVariable {
+        return Err(EvaluatorError::UndefinedVariable {
             name: name.lexeme,
             start: name.start,
             end: name.end,
