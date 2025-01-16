@@ -10,8 +10,8 @@ use crate::{
     arithmetic,
     callable::{Callable, Func, NativeFunc},
     comparison,
-    enviromnent::Environment,
-    error::InterpreterError,
+    environment::Environment,
+    error::EvaluatorError,
     expr::{self, Expr},
     list::List,
     stmt::{self, Stmt},
@@ -19,17 +19,17 @@ use crate::{
     value::{LiteralType, Value},
 };
 
-pub type ExprResult = Result<Value, InterpreterError>;
-pub type StmtResult = Result<(), Result<Value, InterpreterError>>;
+pub type ExprResult = Result<Value, EvaluatorError>;
+pub type StmtResult = Result<(), Result<Value, EvaluatorError>>;
 pub type Env = Rc<RefCell<Environment>>;
 
-pub struct Interpreter {
+pub struct Evaluator {
     pub environment: Env,
     pub globals: Env,
     test_output: Vec<String>,
 }
 
-impl Interpreter {
+impl Evaluator {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
 
@@ -48,7 +48,7 @@ impl Interpreter {
                 hasher.update(s);
                 return Ok(Value::Literal(LiteralType::Str(format!("{:x}", hasher.finalize()))));
             }
-            return Err(InterpreterError::CannotHashValue);
+            return Err(EvaluatorError::CannotHashValue);
         });
 
         globals.borrow_mut().define("clock".to_string(), Value::NativeFunction(clock));
@@ -61,7 +61,7 @@ impl Interpreter {
         };
     }
 
-    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<Vec<String>, InterpreterError> {
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<Vec<String>, EvaluatorError> {
         for stmt in statements {
             match self.execute(&stmt) {
                 Ok(()) => {}
@@ -74,7 +74,7 @@ impl Interpreter {
         return Ok(self.test_output.clone());
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> Result<Value, InterpreterError> {
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, EvaluatorError> {
         return match expr.accept_expr(self) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
@@ -106,12 +106,12 @@ impl Interpreter {
         return Ok(());
     }
 
-    fn is_truthy(&mut self, object: &Value) -> Result<bool, InterpreterError> {
+    fn is_truthy(&mut self, object: &Value) -> Result<bool, EvaluatorError> {
         match object {
             Value::Literal(literal) => {
                 return Ok(!matches!(literal, LiteralType::Null | LiteralType::False))
             }
-            _ => return Err(InterpreterError::ExpectedLiteralValue),
+            _ => return Err(EvaluatorError::ExpectedLiteralValue),
         }
     }
 
@@ -135,7 +135,7 @@ impl Interpreter {
         }
     }
 }
-impl expr::ExprVisitor<ExprResult> for Interpreter {
+impl expr::ExprVisitor<ExprResult> for Evaluator {
     fn visit_alteration_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Alteration { name, alteration_type } => {
@@ -148,10 +148,10 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     TokenType::Decr => {
                         alteration!( self ; - ; name ; curr_value);
                     }
-                    _ => return Err(InterpreterError::ExpectedAlterationToken),
+                    _ => return Err(EvaluatorError::ExpectedAlterationToken),
                 }
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "alteration".to_string(),
             }),
@@ -167,7 +167,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     .borrow_mut()
                     .assign(name, value);
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "assign".to_string(),
             }),
@@ -183,19 +183,19 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 match operator.token_type {
                     TokenType::Greater => {
                         comparison!( > ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::GreaterEqual => {
                         comparison!( >= ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::Less => {
                         comparison!( < ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::LessEqual => {
                         comparison!( <= ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::BangEqual => {
                         if !self.is_equal(&left, &right) {
@@ -211,24 +211,24 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     }
                     TokenType::Plus => {
                         arithmetic!( + ; left ; right );
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::Minus => {
                         arithmetic!( - ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::FSlash => {
                         arithmetic!( / ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
                     TokenType::Asterisk => {
                         arithmetic!( * ; left ; right);
-                        return Err(InterpreterError::ExpectedNumber);
+                        return Err(EvaluatorError::ExpectedNumber);
                     }
-                    _ => return Err(InterpreterError::ExpectedValidBinaryOperator),
+                    _ => return Err(EvaluatorError::ExpectedValidBinaryOperator),
                 }
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "binary".to_string(),
             }),
@@ -250,7 +250,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 match callee {
                     Value::Function(f) => {
                         if args.len() != f.arity {
-                            return Err(InterpreterError::ArgsDifferFromArity {
+                            return Err(EvaluatorError::ArgsDifferFromArity {
                                 args: args.len(),
                                 arity: f.arity,
                             });
@@ -259,17 +259,17 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     }
                     Value::NativeFunction(nf) => {
                         if args.len() != nf.arity {
-                            return Err(InterpreterError::ArgsDifferFromArity {
+                            return Err(EvaluatorError::ArgsDifferFromArity {
                                 args: args.len(),
                                 arity: nf.arity,
                             });
                         }
                         return nf.call(self, args);
                     }
-                    _ => return Err(InterpreterError::ExpectedFunctionOrClass),
+                    _ => return Err(EvaluatorError::ExpectedFunctionOrClass),
                 }
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "call".to_string(),
             }),
@@ -279,7 +279,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
     fn visit_grouping_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Grouping { expression } => return self.evaluate(expression),
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "group".to_string(),
             }),
@@ -295,7 +295,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 }
                 Ok(Value::List(List::new(list)))
             },
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "list".to_string(),
             }),
@@ -337,7 +337,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                                 "index" => return Ok(Value::Literal(LiteralType::Num(list.index(args)? as f64))),
                                 "len" => return Ok(Value::Literal(LiteralType::Num(list.len() as f64))),
                                 "sort" => return Ok(Value::List(list.tim_sort()?)),
-                                _ => return Err(InterpreterError::InvalidListMethod)
+                                _ => return Err(EvaluatorError::InvalidListMethod)
                             };
 
                             self.environment.borrow_mut().assign(object, Value::List(new_list.clone()))?;
@@ -350,7 +350,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
 
                 return Ok(Value::Literal(LiteralType::Null));
             },
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "listmethodcall".to_string(),
             }),
@@ -360,7 +360,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
     fn visit_literal_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Literal { value } => return Ok(Value::Literal(value.clone())),
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "literal".to_string(),
             }),
@@ -394,7 +394,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
 
                 return self.evaluate(right);
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "logical".to_string(),
             }),
@@ -421,20 +421,20 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     if let LiteralType::Num(num) = v {
                         start_idx = *num as usize;
                     } else {
-                        return Err(InterpreterError::ExpectedIndexToBeANum);
+                        return Err(EvaluatorError::ExpectedIndexToBeANum);
                     }
                 } else if end_idx_expr.is_none() {
-                    return Err(InterpreterError::ExpectedIndexToBeANum)
+                    return Err(EvaluatorError::ExpectedIndexToBeANum)
                 }
 
                 if let Some(Value::Literal(v)) = end_idx_expr {
                     if let LiteralType::Num(num) = v {
                         end_idx = Some(num as usize);
                     } else {
-                        return Err(InterpreterError::ExpectedIndexToBeANum);
+                        return Err(EvaluatorError::ExpectedIndexToBeANum);
                     }
                 } else if end_idx.is_some() {
-                    return Err(InterpreterError::ExpectedIndexToBeANum)
+                    return Err(EvaluatorError::ExpectedIndexToBeANum)
                 }
 
                 let value = self.environment.borrow().get(list)?;
@@ -442,7 +442,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                 if let Value::List(list) = value {
                     if let Some(end_idx) = end_idx {
                         if end_idx >= list.values.len() {
-                            return Err(InterpreterError::IndexOutOfRange);
+                            return Err(EvaluatorError::IndexOutOfRange);
                         }
                         if start_idx_expr.is_none() {
                             return Ok(Value::List(List::new(list.values[0..end_idx + 1].to_vec())));
@@ -451,7 +451,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                         return Ok(Value::List(List::new(list.values[start_idx..end_idx + 1].to_vec())));
                     }
                     if start_idx >= list.values.len() {
-                        return Err(InterpreterError::IndexOutOfRange);
+                        return Err(EvaluatorError::IndexOutOfRange);
                     }
                     if *is_splice {
                         return Ok(Value::List(List::new(list.values[start_idx..list.values.len()].to_vec())));
@@ -459,9 +459,9 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                     return Ok(list.values[start_idx].clone());
                 }
 
-                return Err(InterpreterError::ValueWasNotAList);
+                return Err(EvaluatorError::ValueWasNotAList);
             },
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "splice".to_string(),
             }),
@@ -487,12 +487,12 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
                         if let Value::Literal(LiteralType::Num(n)) = right {
                             return Ok(Value::Literal(LiteralType::Num(-n)));
                         }
-                        return Err(InterpreterError::UnableToNegate)
+                        return Err(EvaluatorError::UnableToNegate)
                     }
-                    _ => return Err(InterpreterError::ExpectedMinus),
+                    _ => return Err(EvaluatorError::ExpectedMinus),
                 }
             }
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "unary".to_string(),
             }),
@@ -504,7 +504,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
             Expr::Var { name } => {
                 return self.environment.borrow().get(name);
             },
-            _ => return Err(InterpreterError::DifferentExpression {
+            _ => return Err(EvaluatorError::DifferentExpression {
                 expr: expr.clone(),
                 expected: "variable".to_string(),
             }),
@@ -512,7 +512,7 @@ impl expr::ExprVisitor<ExprResult> for Interpreter {
     }
 }
 
-impl stmt::StmtVisitor<StmtResult> for Interpreter {
+impl stmt::StmtVisitor<StmtResult> for Evaluator {
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> StmtResult {
         match stmt {
             Stmt::Expression { expression } => {
@@ -521,7 +521,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                     Err(e) => Err(Err(e)),
                 }
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "expression".to_string(),
             })),
@@ -570,7 +570,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "for".to_string(),
             })),
@@ -590,7 +590,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "function".to_string(),
             })),
@@ -629,7 +629,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "if".to_string(),
             })),
@@ -654,10 +654,10 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                         self.test_output.push(format!("{list}"));
                         return Ok(());
                     },
-                    _ => return Err(Err(InterpreterError::ExpectedToPrintLiteralValue)),
+                    _ => return Err(Err(EvaluatorError::ExpectedToPrintLiteralValue)),
                 }
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "print".to_string(),
             })),
@@ -676,7 +676,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
                 }
                 return Err(Ok(return_value));
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "return".to_string(),
             })),
@@ -701,7 +701,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "var".to_string(),
             })),
@@ -742,7 +742,7 @@ impl stmt::StmtVisitor<StmtResult> for Interpreter {
 
                 return Ok(());
             }
-            _ => return Err(Err(InterpreterError::DifferentStatement {
+            _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "while".to_string(),
             })),

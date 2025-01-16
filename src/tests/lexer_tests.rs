@@ -126,7 +126,7 @@ fn test_keywords() {
             token!(Return ; "return" ; "" ; 1 ; 46 ; 52),
             token!(Step ; "step" ; "" ; 1 ; 53 ; 57),
             token!(True ; "true" ; "" ; 1 ; 58 ; 62),
-            token!(Var ; "var" ; "" ; 1 ; 63 ; 66),
+            token!(Let ; "let" ; "" ; 1 ; 63 ; 66),
             token!(While ; "while" ; "" ; 1 ; 67 ; 72),
             token!(Eof ; "" ; "" ; 1 ; 73 ; 73)
         ]

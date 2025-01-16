@@ -37,7 +37,7 @@ macro_rules! alteration {
                 $name, Value::Literal(LiteralType::Num(n $operator 1.0))
             );
         };
-        return Err(InterpreterError::ExpectedNumber);
+        return Err(EvaluatorError::ExpectedNumber);
     };
 }
 

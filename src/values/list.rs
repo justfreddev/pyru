@@ -1,6 +1,6 @@
 use std::{cmp::min, fmt};
 
-use crate::{error::InterpreterError, value::{LiteralType, Value}};
+use crate::{error::EvaluatorError, value::{LiteralType, Value}};
 
 const THRESHOLD: f32 = 32.0;
 
@@ -14,9 +14,9 @@ impl List {
         return Self { values };
     }
 
-    pub fn push(&mut self, args: Vec<Value>) -> Result<&mut List, InterpreterError>  {
+    pub fn push(&mut self, args: Vec<Value>) -> Result<&mut List, EvaluatorError>  {
         if args.len() != 1 {
-            return Err(InterpreterError::ArgsDifferFromArity { args: args.len(), arity: 1 });
+            return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
         }
         self.values.push(args[0].clone());
         return Ok(self);
@@ -26,21 +26,21 @@ impl List {
         return (self.values.pop(), self);
     }
 
-    pub fn remove(&mut self, args: Vec<Value>) -> Result<(Value, &mut List), InterpreterError> {
+    pub fn remove(&mut self, args: Vec<Value>) -> Result<(Value, &mut List), EvaluatorError> {
         if args.len() != 1 {
-            return Err(InterpreterError::ArgsDifferFromArity { args: args.len(), arity: 1 });
+            return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
         }
 
         if let Value::Literal(LiteralType::Num(num)) = args[0] {
             return Ok((self.values.remove(num as usize), self));
         }
 
-        return Err(InterpreterError::ExpectedIndexToBeANum);
+        return Err(EvaluatorError::ExpectedIndexToBeANum);
     }
 
-    pub fn insert_at(&mut self, args: Vec<Value>) -> Result<&mut List, InterpreterError> {
+    pub fn insert_at(&mut self, args: Vec<Value>) -> Result<&mut List, EvaluatorError> {
         if args.len() != 2 {
-            return Err(InterpreterError::ArgsDifferFromArity { args: args.len(), arity: 2 });
+            return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 2 });
         }
 
         if let Value::Literal(LiteralType::Num(num)) = args[0] {
@@ -48,17 +48,17 @@ impl List {
             return Ok(self);
         }
         
-        return Err(InterpreterError::ExpectedIndexToBeANum);
+        return Err(EvaluatorError::ExpectedIndexToBeANum);
     }
 
-    pub fn index(&self, args: Vec<Value>) -> Result<usize, InterpreterError> {
+    pub fn index(&self, args: Vec<Value>) -> Result<usize, EvaluatorError> {
         if args.len() != 1 {
-            return Err(InterpreterError::ArgsDifferFromArity { args: args.len(), arity: 1 });
+            return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
         }
 
         return match self.values.iter().position(|x| x == &args[0]) {
             Some(index) => Ok(index),
-            None => Err(InterpreterError::ItemNotFound),
+            None => Err(EvaluatorError::ItemNotFound),
         }
     }
 
@@ -68,7 +68,7 @@ impl List {
 
     // https://www.geeksforgeeks.org/timsort/
     // https://www.baeldung.com/cs/timsort
-    pub fn tim_sort(&mut self) -> Result<List, InterpreterError> {
+    pub fn tim_sort(&mut self) -> Result<List, EvaluatorError> {
         let n = self.values.len();
 
         let mut run_length = self.calc_min_run(n as f32);
@@ -121,7 +121,7 @@ impl List {
         }
     }
 
-    fn merge_sort(&mut self, l: usize, m: usize, r: usize) -> Result<(), InterpreterError> {
+    fn merge_sort(&mut self, l: usize, m: usize, r: usize) -> Result<(), EvaluatorError> {
         let left_len = m - l + 1;
         let right_len = r - m;
 
@@ -157,10 +157,10 @@ impl List {
                             }
                             k += 1;
                         },
-                        _ => return Err(InterpreterError::CannotCompareValues),
+                        _ => return Err(EvaluatorError::CannotCompareValues),
                     }
                 },
-                _ => return Err(InterpreterError::CannotCompareValues),
+                _ => return Err(EvaluatorError::CannotCompareValues),
             }
         }
 

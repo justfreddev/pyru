@@ -235,7 +235,7 @@ pub enum SemanticAnalyserError {
 }
 
 #[derive(Error, Debug)]
-pub enum InterpreterError {
+pub enum EvaluatorError {
     #[error("The statement provided ({stmt}), was different to the statement expected ({expected})")]
     DifferentStatement { stmt: Stmt, expected: String },
 

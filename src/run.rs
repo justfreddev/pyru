@@ -1,5 +1,5 @@
 use crate::{
-    interpreter::Interpreter,
+    evaluator::Evaluator,
     lexer::Lexer,
     parser::Parser,
     semanticanalyser::SemanticAnalyser
@@ -49,7 +49,7 @@ pub fn run(source: &str, debug: bool) -> Vec<String> {
         }
     }
 
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Evaluator::new();
     match interpreter.interpret(ast) {
         Ok(output) => return output,
         Err(e) => {
