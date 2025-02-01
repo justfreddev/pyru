@@ -3,6 +3,14 @@ for i in 0..10 step 2:
 print(1);
 
 
+if 1:
+  print(1);
+else if 2:
+  print(2);
+else:
+  print(3);
+
+
 
 // Prints 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 var a = "test";

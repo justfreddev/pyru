@@ -332,13 +332,20 @@ impl Parser {
         
         let then_branch = self.body()?;
         
+        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
+        
         let mut else_branch = None;
         if self.match_token(vec![&TokenType::Else]) {
-            let result = self.statement()?;
-            else_branch = Some(Box::new(result));
+            if self.match_token(vec![&TokenType::Colon]) {
+                self.consume(TokenType::Indent, "ExpectedIfBody")?;
+                let result = self.statement()?;
+                else_branch = Some(Box::new(result));
+                self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
+            } else {
+                let result = self.statement()?;
+                else_branch = Some(Box::new(result));
+            }
         };
-
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
 
         return Ok(Stmt::If {
             condition,
@@ -717,6 +724,7 @@ impl Parser {
 
         let prev = self.previous();
         let token = self.peek();
+
         return Err(ParserError::ExpectedExpression {
             prev: prev.lexeme.clone(),
             line: token.line,
