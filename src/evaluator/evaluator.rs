@@ -23,6 +23,15 @@ pub type ExprResult = Result<Value, EvaluatorError>;
 pub type StmtResult = Result<(), Result<Value, EvaluatorError>>;
 pub type Env = Rc<RefCell<Environment>>;
 
+/// The `Evaluator` struct is responsible for evaluating the AST and executing the program.
+/// It maintains the current environment and provides methods for evaluating expressions and
+/// executing statements.
+///
+/// # Attributes
+/// - `environment`: The current environment in which the evaluator is operating. This is an `Rc<RefCell<Environment>>`
+///   that allows for shared ownership and interior mutability.
+/// - `globals`: The global environment that contains global variables and functions. This is also an `Rc<RefCell<Environment>>`.
+/// - `output`: A vector of strings used to store output.
 pub struct Evaluator {
     pub environment: Env,
     pub globals: Env,
@@ -30,6 +39,10 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
+    /// Creates a new `Evaluator` instance with a global environment.
+    ///
+    /// # Returns
+    /// A new `Evaluator` instance.
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
 
@@ -61,6 +74,7 @@ impl Evaluator {
         };
     }
 
+    /// Interprets and executes the given statements.
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<Vec<String>, EvaluatorError> {
         for stmt in statements {
             match self.execute(&stmt) {
@@ -74,6 +88,7 @@ impl Evaluator {
         return Ok(self.output.clone());
     }
 
+    /// Evaluates an expression.
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, EvaluatorError> {
         return match expr.accept_expr(self) {
             Ok(v) => Ok(v),
@@ -81,10 +96,12 @@ impl Evaluator {
         }
     }
 
+    /// Executes a statement.
     fn execute(&mut self, stmt: &Stmt) -> StmtResult {
         return stmt.accept_stmt(self);
     }
 
+    /// Executes a block of statements within a new environment.
     pub fn execute_block(&mut self, statements: Vec<Stmt>, environment: Env) -> StmtResult {
         let previous = Rc::clone(&self.environment);
 
@@ -106,6 +123,7 @@ impl Evaluator {
         return Ok(());
     }
 
+    /// Checks if a value is truthy.
     fn is_truthy(&mut self, object: &Value) -> Result<bool, EvaluatorError> {
         match object {
             Value::Literal(literal) => {
@@ -115,10 +133,12 @@ impl Evaluator {
         }
     }
 
+    /// Checks if two values are equal.
     fn is_equal(&mut self, a: &Value, b: &Value) -> bool {
         return *a == *b;
     }
 
+    /// Converts a literal value to its string representation.
     fn stringify(&self, object: &LiteralType) -> String {
         return match object {
             LiteralType::Num(n) => {
@@ -135,6 +155,7 @@ impl Evaluator {
         }
     }
 }
+
 impl expr::ExprVisitor<ExprResult> for Evaluator {
     fn visit_alteration_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
@@ -622,7 +643,7 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                     }
                 } else if else_branch.is_some() {
                     match self.execute(&else_branch.as_ref().unwrap()) {
-                        Ok(_) => {}
+                        Ok(_) => {},
                         Err(r) => return Err(Ok(r)?)
                     };
                 }
@@ -724,7 +745,7 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                 while condition_result {
                     for stmt in body {
                         match self.execute(stmt) {
-                            Ok(_) => {}
+                            Ok(_) => {},
                             Err(r) => return Err(Ok(r)?)
                         };
                     }
