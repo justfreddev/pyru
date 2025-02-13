@@ -24,7 +24,7 @@ pub enum Expr {
     },
     Call {
         callee: Box<Expr>, // The name of the call, e.g. the function name
-        arguments: Vec<Expr>, // The arguments passed in the parenthesise
+        arguments: Vec<Expr>, // The arguments passed in the parentheses
     },
     Grouping {
         expression: Box<Expr>, // The expresion in brackets, usually binary

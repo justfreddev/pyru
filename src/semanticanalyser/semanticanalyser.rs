@@ -6,25 +6,45 @@ use crate::{
     stmt::{self, Stmt},
 };
 
+/// Represents a symbol in the symbol table.
 #[derive(Debug)]
 enum Symbol {
     Ident { initialised: bool },
 }
 
+/// Represents the type of a function.
 #[derive(Clone, PartialEq)]
 enum FunctionType {
     Function,
     None,
 }
 
+/// The `SemanticAnalyser` struct is responsible for performing semantic analysis on the AST.
+/// It checks for semantic errors such as variable declarations, function declarations, and
+/// ensures that the program is semantically correct.
+/// A struct representing a semantic analyser.
+///
+/// # Attributes
+///
+/// `ast` - A vector of statements representing the abstract syntax tree (AST).
+/// `symbol_tables` - A vector of hash maps, each representing a symbol table for different scopes.
+/// `curr` - An index representing the current position in the AST.
+/// `func_type` - An enum representing the type of the current function being analysed.
 pub struct SemanticAnalyser {
     ast: Vec<Stmt>,
-    symbol_tables: Vec<HashMap<String, Symbol>>,
+    symbol_tables: Vec<HashMap<String, Symbol>>, // Stack
     curr: usize,
     func_type: FunctionType,
 }
 
 impl SemanticAnalyser {
+    /// Creates a new `SemanticAnalyser` instance with the given AST.
+    ///
+    /// # Parameters
+    /// - `ast`: A vector of `Stmt` objects representing the AST.
+    ///
+    /// # Returns
+    /// A new `SemanticAnalyser` instance.
     pub fn new(ast: Vec<Stmt>) -> Self {
         Self {
             ast,
@@ -34,6 +54,10 @@ impl SemanticAnalyser {
         }
     }
 
+    /// Runs the semantic analysis on the AST.
+    ///
+    /// # Returns
+    /// A `Result` containing `()` if successful, or a `SemanticAnalyserError` if a semantic error is encountered.
     pub fn run(&mut self) -> Result<(), SemanticAnalyserError> {
         for stmt in self.ast.clone() {
             stmt.accept_stmt(self)?;
@@ -42,18 +66,20 @@ impl SemanticAnalyser {
         return Ok(());
     }
 
-
+    /// Begins a new scope by pushing a new symbol table onto the stack.
     fn begin_scope(&mut self) {
         let st: HashMap<String, Symbol> = HashMap::new();
         self.curr += 1;
         self.symbol_tables.push(st)
     }
 
+    /// Ends the current scope by popping the symbol table from the stack.
     fn end_scope(&mut self) {
         self.curr -= 1;
         self.symbol_tables.pop();
     }
 
+    /// Checks if a variable is declared in any of the symbol tables.
     fn check_declared(&mut self, name: &String) -> bool {
         if self.curr == 0 {
             if self.symbol_tables[0].contains_key(name) {
@@ -70,6 +96,7 @@ impl SemanticAnalyser {
         return false;
     }
 
+    /// Checks if a variable is defined in the current scope.
     fn check_defined(&mut self, ident_name: &String) -> bool {
         if let Some(sym) = self.symbol_tables[self.curr].get(ident_name) {
             match sym {
@@ -85,6 +112,7 @@ impl SemanticAnalyser {
         return false;
     }
 
+    /// Checks and resolves a function declaration.
     fn pass_function(&mut self, stmt: &Stmt, declaration: FunctionType) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Function { name, params, body } => {
