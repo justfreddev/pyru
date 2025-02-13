@@ -26,7 +26,7 @@ pub type Env = Rc<RefCell<Environment>>;
 pub struct Evaluator {
     pub environment: Env,
     pub globals: Env,
-    test_output: Vec<String>,
+    output: Vec<String>,
 }
 
 impl Evaluator {
@@ -57,7 +57,7 @@ impl Evaluator {
         return Self {
             environment: Rc::clone(&globals),
             globals,
-            test_output: Vec::new()
+            output: Vec::new()
         };
     }
 
@@ -71,7 +71,7 @@ impl Evaluator {
                 },
             };
         }
-        return Ok(self.test_output.clone());
+        return Ok(self.output.clone());
     }
 
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, EvaluatorError> {
@@ -646,12 +646,12 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                 match value {
                     Value::Literal(literal) => {
                         println!("{}", self.stringify(&literal));
-                        self.test_output.push(self.stringify(&literal));
+                        self.output.push(self.stringify(&literal));
                         return Ok(());
                     },
                     Value::List(list) => {
                         println!("{list}");
-                        self.test_output.push(format!("{list}"));
+                        self.output.push(format!("{list}"));
                         return Ok(());
                     },
                     _ => return Err(Err(EvaluatorError::ExpectedToPrintLiteralValue)),

@@ -208,8 +208,6 @@ impl Parser {
 
         let body = self.body()?;
 
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
-
         return Ok(Stmt::Function { name, params, body });
     }
 
@@ -313,8 +311,6 @@ impl Parser {
 
         let body = self.body()?;
 
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
-
         return Ok(Stmt::For {
             initializer: Box::new(initializer),
             condition,
@@ -331,8 +327,6 @@ impl Parser {
         self.consume(TokenType::Indent, "ExpectedIfBody")?;
         
         let then_branch = self.body()?;
-        
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
         
         let mut else_branch = None;
         if self.match_token(vec![&TokenType::Else]) {
@@ -381,8 +375,6 @@ impl Parser {
         self.consume(TokenType::Indent, "ExpectWhileBody")?;
         
         let body = self.body()?;
-
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
 
         return Ok(Stmt::While { condition, body });
     }
@@ -746,7 +738,7 @@ impl Parser {
             let stmt = self.declaration()?;
             body.push(stmt);
         }
-        // self.consume(TokenType::Dedent, "TODO: Expected a statement")?;
+        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
 
         return Ok(body);
     }

@@ -15,7 +15,7 @@ use crate::{
 #[derive(Debug)]
 pub struct Environment {
     values: HashMap<String, Rc<RefCell<Value>>>,
-    enclosing: Option<Env>
+    enclosing: Option<Env> // Composition
 }
 
 impl Environment {
