@@ -4,16 +4,22 @@ use crate::{error::EvaluatorError, value::{LiteralType, Value}};
 
 const THRESHOLD: f32 = 32.0;
 
+/// The `List` struct represents a list of values and provides methods for manipulating the list.
+///
+/// ## Fields
+/// - `values`: A vector that stores the values in the list.
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct List {
     pub values: Vec<Value>
 }
 
 impl List {
+    /// Creates a new `List` instance with the given values.
     pub fn new(values: Vec<Value>) -> Self {
         return Self { values };
     }
 
+    /// Adds a value to the end of the list.
     pub fn push(&mut self, args: Vec<Value>) -> Result<&mut List, EvaluatorError>  {
         if args.len() != 1 {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
@@ -22,10 +28,12 @@ impl List {
         return Ok(self);
     }
 
+    /// Removes and returns the last value from the list.
     pub fn pop(&mut self) -> (Option<Value>, &mut List) {
         return (self.values.pop(), self);
     }
 
+    /// Removes and returns the value at the specified index.
     pub fn remove(&mut self, args: Vec<Value>) -> Result<(Value, &mut List), EvaluatorError> {
         if args.len() != 1 {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
@@ -38,6 +46,7 @@ impl List {
         return Err(EvaluatorError::ExpectedIndexToBeANum);
     }
 
+    /// Inserts a value at the specified index.
     pub fn insert_at(&mut self, args: Vec<Value>) -> Result<&mut List, EvaluatorError> {
         if args.len() != 2 {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 2 });
@@ -51,6 +60,7 @@ impl List {
         return Err(EvaluatorError::ExpectedIndexToBeANum);
     }
 
+    /// Returns the index of the specified value in the list.
     pub fn index(&self, args: Vec<Value>) -> Result<usize, EvaluatorError> {
         if args.len() != 1 {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
@@ -62,12 +72,12 @@ impl List {
         }
     }
 
+    /// Returns the length of the list.
     pub fn len(&self) -> usize {
         return self.values.len();
     }
 
-    // https://www.geeksforgeeks.org/timsort/
-    // https://www.baeldung.com/cs/timsort
+    /// Sorts the list using the TimSort algorithm.
     pub fn tim_sort(&mut self) -> Result<List, EvaluatorError> {
         let n = self.values.len();
 

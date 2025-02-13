@@ -16,6 +16,15 @@ pub enum TokenType {
     Eof, Indent, Dedent
 }
 
+/// The `Token` struct represents a token in the source code.
+///
+/// ## Fields
+/// - `token_type`: The type of the token.
+/// - `lexeme`: The lexeme (text) of the token.
+/// - `literal`: The literal value of the token, if any.
+/// - `line`: The line number where the token is located.
+/// - `start`: The starting index of the token in the source code.
+/// - `end`: The ending index of the token in the source code.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
@@ -27,6 +36,7 @@ pub struct Token {
 }
 
 impl Token {
+    /// Creates a new `Token` instance.
     pub fn new(token_type: TokenType, lexeme: String, literal: String, line: usize, start: usize, end: usize) -> Self {
         Self {
             token_type,
@@ -88,7 +98,6 @@ impl fmt::Display for TokenType {
             TokenType::Eof => write!(f, "Eof"),
             TokenType::Indent => write!(f, "Indent"),
             TokenType::Dedent => write!(f, "Dedent"),
-
         }
     }
 }

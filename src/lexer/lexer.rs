@@ -88,10 +88,6 @@ pub struct Lexer {
 
 impl Lexer {
     /// Returns a new instance of the Lexer struct
-    /// ## Arguments
-    /// - `source`: The source code being interpreted
-    /// ## Returns
-    /// - `Lexer`: A new instance of the lexer
     pub fn new(source: String) -> Self {
         // Creates a new HashMap, mapping keyword Strings to the
         // TokenType of the keyword of all the keywords of the language
@@ -116,14 +112,6 @@ impl Lexer {
     }
 
     /// Runs the lexer and tokenizes `self.source`.
-    /// 
-    /// It works by setting the `start` pointer scanning tokens with `scan_token()` until the end
-    /// of the source code, when it will add the EoF (End of File) token and return
-    /// `Ok(Vec<Token>)`, or `Err(LexerError)`
-    /// 
-    /// ## Returns
-    /// - [`Result<Vec<Token>, LexerError>`]: Either successfully returns the vector of tokens, or
-    /// a `LexerError` where something has led to an error during the scanning process.
     pub fn run(&mut self) -> Result<Vec<Token>, LexerError> {
         while !self.is_at_end() {
 
@@ -160,9 +148,6 @@ impl Lexer {
     }
 
     /// Adds a token to `self.tokens`
-    /// 
-    /// ## Arguments
-    /// - `token_type`: The type of the token to be added, determined from `scan_token()`
     fn add_token(&mut self, token_type: TokenType) {
         let text = String::from(&self.source[self.start..self.curr]);
         self.tokens.push(Token::new(
@@ -176,10 +161,6 @@ impl Lexer {
     }
 
     /// Adds a string or number token to `self.tokens`.
-    /// 
-    /// ## Arguments
-    /// - `token_type`: The type of token being added
-    /// - `literal`: The literal value of the token being added, such as `1234` or `Hello World`
     fn add_string_token(&mut self, token_type: TokenType, literal: String) {
         let text = String::from(&self.source[self.start..self.curr]);
         self.tokens.push(Token::new(
@@ -189,11 +170,6 @@ impl Lexer {
 
     /// Processes a string token once `"` is found, and repeatedly advances, as long as another `"`
     /// is found or the end of the source code is not reached.
-    /// 
-    /// ## Returns
-    /// [`Result<(), LexerError>`]: Either successfully returns nothing once the string token is
-    /// processed and pushed to the tokens vector or returns a [`LexerError`] if an error is
-    /// encountered
     fn string(&mut self) -> Result<(), LexerError> {
         while self.peek()? != '"' && !self.is_at_end() {
             if self.peek()? == '\n' {
@@ -224,9 +200,6 @@ impl Lexer {
     /// Processes numbers when a digit is found, and, similarly to `string()`, it repeatedly 
     /// advances as long as the next character is a digit or is not a decimal point followed by the
     /// fractional part of the number
-    /// 
-    /// ## Returns
-    /// [`Result<(), LexerError>`]
     fn number(&mut self) -> Result<(), LexerError> {
         while self.is_digit(self.peek()?) {
             self.advance()?;
@@ -492,9 +465,6 @@ impl Lexer {
     /// Checks if the current character in the source code is the expected character, and if it is,
     /// then it will advance and return `true`. If the scanner is at the end of the source code or
     /// the current character is not the expected one, then the function will return false
-    /// 
-    /// ## Arguments
-    /// - `expected`: The `char` that it expects to be the current character
     fn match_token(&mut self, expected: char) -> bool {
         if self.is_at_end() {
             return false;

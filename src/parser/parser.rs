@@ -76,7 +76,6 @@ use crate::{
 /// an abstract syntax tree (AST) for the evaluator, by maintaining the state of the parsing process.
 /// 
 /// ## Fields
-/// 
 /// - `tokens`: The list of tokens that are iterated over
 /// - `current`: A pointer referencing the current token in the tokens vector
 pub struct Parser {
@@ -87,21 +86,11 @@ pub struct Parser {
 impl Parser {
     
     /// Creates a new `Parser` instance with the given tokens.
-    ///
-    /// # Parameters
-    /// - `tokens`: A vector of `Token` objects to be parsed.
-    ///
-    /// # Returns
-    /// A new `Parser` instance.
     pub fn new(tokens: Vec<Token>) -> Self {
         return Self { tokens, current: 0 };
     }
 
     /// Starts the parsing process and returns the resulting AST.
-    ///
-    /// # Returns
-    /// A `Result` containing a vector of `Stmt` objects representing the AST if successful,
-    /// or a `ParserError` if a syntax error is encountered.
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParserError> {
         let mut statements = Vec::new();
 
@@ -116,9 +105,6 @@ impl Parser {
     }
 
     /// Parses a declaration, which can be a function or variable declaration, or a statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn declaration(&mut self) -> Result<Stmt, ParserError> {
         if self.match_token(vec![&TokenType::Def]) {
             return match self.function("function") {
@@ -142,9 +128,6 @@ impl Parser {
     }
 
     /// Parses a function declaration.
-    ///
-    /// # Parameters
-    /// - `kind`: A string representing the kind of function (e.g., "function").
     fn function(&mut self, kind: &str) -> Result<Stmt, ParserError> {
         let name = match self.consume(
             TokenType::Identifier,
@@ -209,10 +192,6 @@ impl Parser {
     }
 
     /// Begins the recursive descent with parsing a variable declaration
-    /// 
-    /// # Returns
-    /// A `Result` containing a `Stmt` object representing the function if successful,
-    /// or a `ParserError` if a syntax error is encountered.
     fn var_declaration(&mut self) -> Result<Stmt, ParserError> {
         let name = self.consume(TokenType::Identifier, "ExpectedVariableName")?;
 
@@ -229,9 +208,6 @@ impl Parser {
     }
 
     /// Parses a statement, which can be a for, if, print, return, while, or expression statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn statement(&mut self) -> Result<Stmt, ParserError> {
         if self.match_token(vec![&TokenType::For]) {
             return self.for_statement();
@@ -253,9 +229,6 @@ impl Parser {
     }
 
     /// Parses a for statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn for_statement(&mut self) -> Result<Stmt, ParserError> {
 
         let name = self.consume(TokenType::Identifier, "ExpectedInitializer")?;
@@ -324,9 +297,6 @@ impl Parser {
     }
 
     /// Parses an if statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn if_statement(&mut self) -> Result<Stmt, ParserError> {
         let condition = self.expression()?;
 
@@ -357,9 +327,6 @@ impl Parser {
     }
 
     /// Parses a print statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn print_statement(&mut self) -> Result<Stmt, ParserError> {
         self.consume(TokenType::LParen, "ExpectedLParenBeforePrintValue")?;
         let value = self.expression()?;
@@ -370,9 +337,6 @@ impl Parser {
     }
 
     /// Parses a return statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn return_statement(&mut self) -> Result<Stmt, ParserError> {
         let keyword = self.previous().clone();
         let mut value = None;
@@ -385,9 +349,6 @@ impl Parser {
     }
 
     /// Parses a while statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn while_statement(&mut self) -> Result<Stmt, ParserError> {
         let condition = self.expression()?;
 
@@ -400,17 +361,11 @@ impl Parser {
     }
 
     /// Parses an expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn expression(&mut self) -> Result<Expr, ParserError> {
         return self.assignment();
     }
 
     /// Parses an assignment expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn assignment(&mut self) -> Result<Expr, ParserError> {
         let expr = self.or()?;
 
@@ -468,9 +423,6 @@ impl Parser {
     }
 
     /// Parses a logical OR expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn or(&mut self) -> Result<Expr, ParserError> {
         let mut expr = self.and()?;
 
@@ -488,9 +440,6 @@ impl Parser {
     }
 
     /// Parses a logical AND expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn and(&mut self) -> Result<Expr, ParserError> {
         let mut expr = self.equality()?;
 
@@ -508,9 +457,6 @@ impl Parser {
     }
 
     /// Parses an equality expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn equality(&mut self) -> Result<Expr, ParserError> {
         let mut expr: Expr = self.comparison()?;
 
@@ -528,9 +474,6 @@ impl Parser {
     }
 
     /// Parses a comparison expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn comparison(&mut self) -> Result<Expr, ParserError> {
         let mut expr: Expr = self.term()?;
 
@@ -555,9 +498,6 @@ impl Parser {
     }
 
     /// Parses a term expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn term(&mut self) -> Result<Expr, ParserError> {
         let mut expr = self.factor()?;
 
@@ -575,9 +515,6 @@ impl Parser {
     }
 
     /// Parses a factor expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn factor(&mut self) -> Result<Expr, ParserError> {
         let mut expr = self.unary()?;
 
@@ -595,9 +532,6 @@ impl Parser {
     }
 
     /// Parses a unary expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn unary(&mut self) -> Result<Expr, ParserError> {
         if self.match_token(vec![&TokenType::Bang, &TokenType::Minus]) {
             let operator = self.previous().clone();
@@ -612,9 +546,6 @@ impl Parser {
     }
 
     /// Parses a call expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn call(&mut self) -> Result<Expr, ParserError> {
         let mut expr = self.primary()?;
 
@@ -644,9 +575,6 @@ impl Parser {
     }
 
     /// Finishes parsing a call expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParserError> {
         let mut arguments: Vec<Expr> = Vec::new();
 
@@ -672,9 +600,6 @@ impl Parser {
     }
 
     /// Parses a primary expression.
-    ///
-    /// # Returns
-    /// A `Result` containing an `Expr` object if successful, or a `ParserError` if a syntax error is encountered.
     fn primary(&mut self) -> Result<Expr, ParserError> {
         if self.match_token(vec![&TokenType::True]) {
             return Ok(Expr::Literal {
@@ -792,9 +717,6 @@ impl Parser {
     }
 
     /// Parses an expression statement.
-    ///
-    /// # Returns
-    /// A `Result` containing a `Stmt` object if successful, or a `ParserError` if a syntax error is encountered.
     fn expression_statement(&mut self) -> Result<Stmt, ParserError> {
         let expr = self.expression()?;
 
@@ -804,9 +726,6 @@ impl Parser {
     }
 
     /// Parses a block of statements.
-    ///
-    /// # Returns
-    /// A `Result` containing a vector of `Stmt` objects if successful, or a `ParserError` if a syntax error is encountered.
     fn body(&mut self) -> Result<Vec<Stmt>, ParserError> {
         let mut body = Vec::new();
 
@@ -820,9 +739,6 @@ impl Parser {
     }
 
     /// Matches the current token with the given token types.
-    ///
-    /// # Returns
-    /// `true` if the current token matches one of the given types, `false` otherwise.
     fn match_token(&mut self, types: Vec<&TokenType>) -> bool {
         for token_type in types {
             if self.check(*token_type) {
@@ -835,9 +751,6 @@ impl Parser {
     }
 
     /// Checks if the current token matches the given token type.
-    ///
-    /// # Returns
-    /// `true` if the current token matches the given type, `false` otherwise.
     fn check(&mut self, token_type: TokenType) -> bool {
         if self.is_at_end() {
             return false;
@@ -847,9 +760,6 @@ impl Parser {
     }
 
     /// Advances to the next token and returns the previous token.
-    ///
-    /// # Returns
-    /// A reference to the previous token.
     fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current += 1
@@ -859,25 +769,16 @@ impl Parser {
     }
 
     /// Returns a reference to the previous token.
-    ///
-    /// # Returns
-    /// A reference to the previous token.
     fn previous(&self) -> &Token {
         return &self.tokens[self.current - 1];
     }
 
     /// Returns a reference to the current token.
-    ///
-    /// # Returns
-    /// A reference to the current token.
     fn peek(&self) -> &Token {
         return &self.tokens[self.current];
     }
 
     /// Checks if the parser has reached the end of the tokens.
-    ///
-    /// # Returns
-    /// `true` if the parser is at the end of the tokens, `false` otherwise.
     fn is_at_end(&mut self) -> bool {
         return self.peek().token_type == TokenType::Eof;
     }
@@ -907,9 +808,6 @@ impl Parser {
     }
 
     /// Consumes the current token if it matches the given token type, otherwise returns an error.
-    ///
-    /// # Returns
-    /// A `Result` containing the consumed token if successful, or a `ParserError` if the token does not match the expected type.
     fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, ParserError> {
         if self.check(token_type) {
             return Ok(self.advance().clone());

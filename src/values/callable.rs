@@ -16,6 +16,13 @@ pub trait Callable {
     fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError>;
 }
 
+/// The `Func` struct represents a user-defined function.
+///
+/// ## Fields
+/// - `name`: The name of the function.
+/// - `arity`: The number of parameters the function takes.
+/// - `declaration`: The statement that declares the function.
+/// - `closure`: The environment in which the function was declared.
 #[derive(Clone, Debug)]
 pub struct Func {
     name: String,
@@ -40,6 +47,7 @@ impl PartialOrd for Func {
 }
 
 impl Func {
+    /// Creates a new `Func` instance.
     pub fn new(declaration: Stmt, closure: Env) -> Result<Self, EvaluatorError> {
         match &declaration {
             Stmt::Function { name, params, .. } => {
@@ -79,6 +87,12 @@ impl Callable for Func {
     }
 }
 
+/// The `NativeFunc` struct represents a native function implemented in Rust.
+///
+/// ## Fields
+/// - `name`: The name of the native function.
+/// - `arity`: The number of parameters the native function takes.
+/// - `fun`: The function pointer to the native function implementation.
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct NativeFunc {
     name: String,
@@ -87,6 +101,7 @@ pub struct NativeFunc {
 }
 
 impl NativeFunc {
+    /// Creates a new `NativeFunc` instance.
     pub fn new(name: String, arity: usize, fun: fn(&mut Evaluator, Vec<Value>) -> Result<Value, EvaluatorError>) -> Self {
         return Self { name, arity, fun };
     }
