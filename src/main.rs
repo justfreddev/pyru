@@ -115,7 +115,7 @@ fn _run_code(message: Json<Message>) -> Json<String> {
 fn main() {
     let source = repl();
 
-    let debug = true;
+    let debug = false;
 
     let _ = run(source.as_str(), debug);
 }

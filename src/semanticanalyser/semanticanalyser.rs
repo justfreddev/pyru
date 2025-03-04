@@ -303,6 +303,21 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
         }
     }
 
+    fn visit_membership_expr(&mut self,expr: &Expr) -> Result<(), SemanticAnalyserError> {
+        match expr {
+            Expr::Membership { left, not: _, right } => {
+                left.accept_expr(self)?;
+                right.accept_expr(self)?;
+
+                return Ok(());
+            },
+            _ => return Err(SemanticAnalyserError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "membership".to_string(),
+            }),
+        }
+    }
+
     fn visit_splice_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
             Expr::Splice { list, is_splice: _, start, end } => {

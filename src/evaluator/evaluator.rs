@@ -422,6 +422,29 @@ impl expr::ExprVisitor<ExprResult> for Evaluator {
         }
     }
 
+    fn visit_membership_expr(&mut self, expr: &Expr) -> ExprResult {
+        match expr {
+            Expr::Membership { left, not, right } => {
+                let left = self.evaluate(left)?;
+                let right = self.evaluate(right)?;
+
+                if let Value::List(list) = right {
+                    if (list.values.contains(&left) && !not) || (!list.values.contains(&left) && *not) {
+                        return Ok(Value::Literal(LiteralType::True));
+                    } else {
+                        return Ok(Value::Literal(LiteralType::False));
+                    }
+                }
+
+                return Err(EvaluatorError::ExpectedList);
+            },
+            _ => return Err(EvaluatorError::DifferentExpression {
+                expr: expr.clone(),
+                expected: "membership".to_string(),
+            }),
+        }
+    }
+
     fn visit_splice_expr(&mut self, expr: &Expr) -> ExprResult {
         match expr {
             Expr::Splice { list, is_splice, start, end } => {

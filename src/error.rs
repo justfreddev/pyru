@@ -245,6 +245,9 @@ pub enum EvaluatorError {
     #[error("Expected a literal value")]
     ExpectedLiteralValue,
 
+    #[error("Expected a list in the membership expression")]
+    ExpectedList,
+
     #[error("Unable to negate number")]
     UnableToNegate,
 

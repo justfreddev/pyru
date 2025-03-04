@@ -44,6 +44,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Membership {
+        left: Box<Expr>, // The expression to be searched for
+        not: bool,
+        right: Box<Expr> // The list
+    },
     Splice {
         list: Token, // The name of the variable for the list
         is_splice: bool, // Check if it is a splice to see if returning list or value
@@ -77,6 +82,12 @@ impl fmt::Display for Expr {
             Expr::Logical { left, operator, right } => {
                 write!(f, "Logical({left} {operator} {right})")
             },
+            Expr::Membership { left, not, right } => {
+                if *not {
+                    return write!(f, "{left} not in {right}");
+                };
+                write!(f, "{left} in {right}")
+            },
             Expr::Splice { list, is_splice: _, start, end } => {
                 write!(f, "{list}[{start:?}:{end:?}]")
             },
@@ -86,4 +97,4 @@ impl fmt::Display for Expr {
     }
 }
 
-expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, ListMethodCall, Literal, Logical, Splice, Unary, Var);
+expr_visitor!(Alteration, Assign, Binary, Call, Grouping, List, ListMethodCall, Literal, Logical, Membership, Splice, Unary, Var);

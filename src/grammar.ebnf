@@ -1,17 +1,70 @@
 source = {statement} ;
 
+statement = functionStatement
+            | variableStatement
+            | expressionStatement
+            | ifStatement
+            | printStatement
+            | returnStatement
+            | whileStatement
+            | forStatement ;
 
-
-ifStatement = "if" , expression , ":" , indent , {statement} , dedent , {elifStatement} , [elseStatement] ;
-    elifStatement = "elif" , expression , ":" , indent , {statement} , dedent ;
-    elseStatement = "else" , ":" , indent , {statement} , dedent ;
+ifStatement = "if" , expression , ":" , body , {elifStatement} , [elseStatement] ;
+    elifStatement = "elif" , expression , ":" , body ;
+    elseStatement = "else" , ":" , body ;
 
 whileStatement = "while" , expression , ":" , indent , {statement} , dedent ;
 
-forStatement = "for" , identifier , "in" , expression , ["step" , expression] , ":" , indent , {statement} , dedent ;
+forStatement = "for" , identifier , "in" , expression , ["step" , expression] , ":" , body ;
 
-functionStatement = "def" , identifier , "(" , [identifier , {"," , identifier}] , ")" , ":" , indent , {statement} , dedent ;
+functionStatement = "def" , identifier , "(" , [parameters] , ")" , ":" , body ;
+    parameters = identifier , {"," , identifier} ;
 
-returnStatement = "return" , [expression] ;
+returnStatement = "return" , [expression] , ";" ;
 
-printStatement = "print" , "(" , expression , ")" ;
+printStatement = "print" , "(" , expression , ")" , ";" ;
+
+variableStatement = "let" , identifier , ["=" , expression] , ";" ;
+
+expressionStatement = expression , ";" ;
+
+expression = assignment ;
+
+assignment = identifier , "=" , expression
+            | logicOr | alteration ;
+
+alteration = logicOr , {("++" | "--")} ;
+logicOr = logicAnd , {"or" , logicAnd} ;
+logicAnd = equality , {"and" , equality} ;
+equality = comparison , {("!=" | "==") , comparison} ;
+comparison = term , {(">" | ">=" | "<" | "<=") , term} ;
+membership = term , {("in" | "not in") , term} ;
+term = factor , {("-" | "+") , factor} ;
+factor = unary , {("/" | "*") , unary} ;
+unary = ("!" | "-") , unary
+        | call ;
+
+call = primary , "(" , [arguments] , ")" ;
+
+primary = "true"
+        | "false"
+        | "null"
+        | number
+        | string
+        | identifier
+        | "(" , expression , ")" ;
+
+arguments = expression , {"," , expression} ;
+
+(* Helper rules*)
+body = indent , statement , {statement} , dedent ;
+
+number = digit , {digit} , ["." , {digit}] ;
+string = "\"" , {any char except "\""} , "\"" ;
+identifier = alpha , {alpha | digit} ;
+alpha = "a" ... "z" | "A" ... "Z" | "_" ;
+digit = "0" ... "9" ;
+
+indent = "\t" | "    ";
+
+dedent = "" ;

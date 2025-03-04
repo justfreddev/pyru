@@ -182,9 +182,9 @@ impl Parser {
 
         self.consume(TokenType::RParen, "ExpectedRParenAfterParameters")?;
 
-        self.consume(TokenType::Colon, "TODO: Expected colon after parameters")?;
+        self.consume(TokenType::Colon, "ExpectedColon")?;
 
-        self.consume(TokenType::Indent, "TODO: Expected function body")?;
+        self.consume(TokenType::Indent, "ExpectedFunctionBody")?;
 
         let body = self.body()?;
 
@@ -312,7 +312,7 @@ impl Parser {
                 self.consume(TokenType::Indent, "ExpectedIfBody")?;
                 let result = self.statement()?;
                 else_branch = Some(Box::new(result));
-                self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
+                self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;
             } else {
                 let result = self.statement()?;
                 else_branch = Some(Box::new(result));
@@ -475,7 +475,7 @@ impl Parser {
 
     /// Parses a comparison expression.
     fn comparison(&mut self) -> Result<Expr, ParserError> {
-        let mut expr: Expr = self.term()?;
+        let mut expr: Expr = self.membership()?;
 
         while self.match_token(vec![
             &TokenType::Greater,
@@ -486,10 +486,31 @@ impl Parser {
             &TokenType::EqualEqual,
         ]) {
             let operator = self.previous().clone();
-            let right = self.term()?;
+            let right = self.membership()?;
             expr = Expr::Binary {
                 left: Box::new(expr.clone()),
                 operator,
+                right: Box::new(right),
+            };
+        }
+
+        return Ok(expr);
+    }
+
+    /// Parses a membership expression.
+    fn membership(&mut self) -> Result<Expr, ParserError> {
+        let mut expr = self.term()?;
+        let mut not = false;
+
+        if self.match_token(vec![&TokenType::Not]) {
+            not = true;
+        }
+
+        while self.match_token(vec![&TokenType::In]) {
+            let right = self.term()?;
+            expr = Expr::Membership {
+                left: Box::new(expr),
+                not,
                 right: Box::new(right),
             };
         }
@@ -733,7 +754,7 @@ impl Parser {
             let stmt = self.declaration()?;
             body.push(stmt);
         }
-        self.consume(TokenType::Dedent, "ExpectDedentAfterStmt")?;
+        self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;
 
         return Ok(body);
     }
@@ -770,6 +791,7 @@ impl Parser {
 
     /// Returns a reference to the previous token.
     fn previous(&self) -> &Token {
+        // println!("{:#?}", &self.tokens[self.current]);
         return &self.tokens[self.current - 1];
     }
 
@@ -959,6 +981,13 @@ impl Parser {
                     line: token.line
                 })
             },
+            "ExpectedFunctionBody" => {
+                let token = self.peek();
+                Err(ParserError::ExpectedBody {
+                    type_: "function".to_string(),
+                    line: token.line
+                })
+            },
             "ExpectedIfBody" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedBody {
@@ -973,7 +1002,7 @@ impl Parser {
                     line: token.line
                 })
             },
-            "ExpectedDedent" => {
+            "ExpectedDedentAfterStmt" => {
                 let token = self.peek();
                 Err(ParserError::ExpectedDedent {
                     line: token.line
