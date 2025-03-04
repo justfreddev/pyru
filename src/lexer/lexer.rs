@@ -76,6 +76,7 @@ use crate::{
 /// - `keywords`: A HashMap that maps keyword strings to their corresponding [`TokenType`]
 pub struct Lexer {
     source: String,
+    tabsize: u8,
     tokens: Vec<Token>,
     start: usize,
     curr: usize,
@@ -88,18 +89,19 @@ pub struct Lexer {
 
 impl Lexer {
     /// Returns a new instance of the Lexer struct
-    pub fn new(source: String) -> Self {
+    pub fn new(source: String, tabsize: u8) -> Self {
         // Creates a new HashMap, mapping keyword Strings to the
         // TokenType of the keyword of all the keywords of the language
         let mut kw: HashMap<String, TokenType> = HashMap::new();
         keywords!(
             kw;
-            And, Def, Else, False, For, If, In, Let, Null,
-            Or, Print, Return, Step, True, While
+            And, Def, Else, False, For, If, In, Let, Not,
+            Null, Or, Print, Return, Step, True, While
         );
 
         return Self {
             source,
+            tabsize,
             tokens: Vec::new(),
             start: 0,
             curr: 0,
@@ -362,19 +364,18 @@ impl Lexer {
         // Line 423
         if self.is_new_line {
             let mut col = 0;
-            const TABSIZE: i32 = 2;
             loop {
                 if self.match_token(' ') {
                     col += 1;
                 } else if self.match_token('\t') {
-                    col += TABSIZE;
+                    col += self.tabsize;
                 } else {
                     break;
                 }
             }
 
-            let indent_count = if col % TABSIZE == 0 {
-                (col / TABSIZE) as usize
+            let indent_count = if col % self.tabsize == 0 {
+                (col / self.tabsize) as usize
             } else {
                 println!("Incorrect Indentation Error, Col: {col}");
                 return Err(LexerError::IncorrectIndentation { line: self.line });

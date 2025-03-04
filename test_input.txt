@@ -2,14 +2,23 @@ for i in 0..10 step 2:
   print(i);
 print(1);
 
+def makeCounter():
+  let i = 0;
+  def count():
+    i++;
+    print(i);
+  return count;
+let counter = makeCounter();
+counter();
+counter();
 
-if 1:
+if 1 == 1:
+  if 2 == 2:
+    if 3 == 3:
+      print(3);
+    print(2);
   print(1);
-else if 2:
-  print(2);
-else:
-  print(3);
-
+print(0);
 
 
 // Prints 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08

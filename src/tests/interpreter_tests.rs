@@ -7,13 +7,17 @@ use crate::{
 
 #[allow(unused)]
 pub fn run(source: &str) -> Vec<String> {
-    let mut lexer = Lexer::new(source.to_string());
+    let mut lexer = Lexer::new(source.to_string(), 4);
     let tokens = match lexer.run() {
         Ok(tokens) => tokens,
         Err(_) => {
             return vec!["error".to_string()];
         }
     };
+
+    // for token in &tokens {
+    //     println!("{token}");
+    // }
 
     let mut parser = Parser::new(tokens);
     let ast = match parser.parse() {
@@ -36,75 +40,35 @@ pub fn run(source: &str) -> Vec<String> {
     match evaluator.interpret(ast) {
         Ok(output) => return output,
         Err(e) => {
-            eprintln!("An evaluator error occured: {e}")
+            eprintln!("An evaluator error occured: {e}");
+            return vec!["error".to_string()];
         }
     }
-
-    return vec!["error".to_string()];
-}
-
-#[test]
-fn test_blocks() {
-    assert_eq!(
-        run(
-            "var a = \"outer\";
-
-            {
-                var a = \"inner\";
-                print a;
-            }
-            
-            print a;
-            "
-        ),
-        vec![
-            "inner".to_string(),
-            "outer".to_string(),
-        ]
-    );
-
-    assert_eq!(
-        run(
-            "
-            {}
-
-            if (true) {}
-            if (false) {} else {}
-
-            print \"ok\";
-            "
-        ),
-        vec![
-            "ok".to_string()
-        ]
-    )
 }
 
 #[test]
 fn test_bool() {
     assert_eq!(
-        run(
-            "
-            print true == true;
-            print true == false;
-            print false == true;
-            print false == false;
-            print true == 1;
-            print false == 0;
-            print true == \"true\";
-            print false == \"false\";
-            print false == \"\";
-            print true != true;
-            print true != false;
-            print false != true;
-            print false != false;
-            print true != 1;
-            print false != 0;
-            print true != \"true\";
-            print false != \"false\";
-            print false != \"\";
-            "
-        ),
+        run(r#"
+print(true == true);
+print(true == false);
+print(false == true);
+print(false == false);
+print(true == 1);
+print(false == 0);
+print(true == \"true\");
+print(false == \"false\");
+print(false == \"\");
+print(true != true);
+print(true != false);
+print(false != true);
+print(false != false);
+print(true != 1);
+print(false != 0);
+print(true != \"true\");
+print(false != \"false\");
+print(false != \"\");
+"#),
         vec![
             "true".to_string(),
             "false".to_string(),
@@ -132,11 +96,11 @@ fn test_bool() {
 
     assert_eq!(
         run(
-            "
-            print !true;
-            print !false;
-            print !!true;
-            "
+            r#"
+            print(!true);
+            print(!false);
+            print(!!true);
+            "#
         ),
         vec![
             "false".to_string(),
@@ -172,38 +136,17 @@ fn test_call() {
 #[test]
 fn test_closures() {
     assert_eq!(
-        run(
-            "
-            var f;
-            {
-            var local = \"local\";
-            def f_() {
-                print local;
-            }
-            f = f_;
-            }
-            f();
-            "
-        ),
-        vec!["local".to_string()]
-    );
-
-    assert_eq!(
-        run(
-            "
-            def makeCounter() {
-                var i = 0;
-                def count() {
-                  i++;
-                  print i;
-                }
-                return count;
-              }
-              var counter = makeCounter();
-              counter();
-              counter();
-            "
-        ),
+        run(r#"
+def makeCounter():
+    let i = 0;
+    def count():
+        i++;
+        print(i);
+    return count;
+let counter = makeCounter();
+counter();
+counter();
+"#),
         vec!["1".to_string(), "2".to_string()]
     );
 }
@@ -213,7 +156,7 @@ fn test_evaluations() {
     assert_eq!(
         run(
             "
-            print (5 - (3 - 1)) + -1;
+            print((5 - (3 - 1)) + -1);
             "
         ),
         vec!["2".to_string()]
@@ -222,19 +165,20 @@ fn test_evaluations() {
     assert_eq!(
         run(
             "
-            var f1;
-            var f2;
-            var f3;
-            for (var i = 1; i < 4; i++) {
-            var j = i;
-            def f() {
-                print i;
-                print j;
-            }
-            if (j == 1) f1 = f;
-            else if (j == 2) f2 = f;
-            else f3 = f;
-            }
+            let f1;
+            let f2;
+            let f3;
+            for i in 1..3:
+                let j = i;
+                def ():
+                    print(i);
+                    print(j);
+                if j == 1:
+                    f1 = f;
+                elif j == 2:
+                    f2 = f;
+                else:
+                    f3 = f;
             f1();
             f2();
             f3();

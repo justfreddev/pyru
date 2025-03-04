@@ -19,7 +19,7 @@ macro_rules! token {
 }
 
 fn lex(source: &str) -> Vec<Token> {
-    let mut lexer = Lexer::new(source.to_string());
+    let mut lexer = Lexer::new(source.to_string(), 4);
     let tokens = match lexer.run() {
         Ok(t) => {
             t

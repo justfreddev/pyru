@@ -10,7 +10,7 @@ pub fn run(source: &str, debug: bool) -> Vec<String> {
         println!("{:?}", source.chars().collect::<Vec<char>>());
     }
 
-    let mut lexer = Lexer::new(source.to_string());
+    let mut lexer = Lexer::new(source.to_string(), 2);
     let tokens = match lexer.run() {
         Ok(tokens) => tokens,
         Err(e) => {
