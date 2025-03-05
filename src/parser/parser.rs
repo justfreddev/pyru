@@ -266,7 +266,6 @@ impl Parser {
             }
         };
 
-
         self.consume(TokenType::Colon, "ExpectedColon")?;
         
         self.consume(TokenType::Indent, "ExpectedForBody")?;
@@ -287,7 +286,7 @@ impl Parser {
         };
 
         let body = self.body()?;
-
+        
         return Ok(Stmt::For {
             initializer: Box::new(initializer),
             condition,
@@ -312,7 +311,10 @@ impl Parser {
                 self.consume(TokenType::Indent, "ExpectedIfBody")?;
                 let result = self.statement()?;
                 else_branch = Some(Box::new(result));
-                self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;
+                if self.match_token(vec![&TokenType::Eof]) {}
+                else{
+                    self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;
+                }
             } else {
                 let result = self.statement()?;
                 else_branch = Some(Box::new(result));
@@ -754,7 +756,8 @@ impl Parser {
             let stmt = self.declaration()?;
             body.push(stmt);
         }
-        self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;
+        if self.peek().token_type == TokenType::Eof {}
+        else {self.consume(TokenType::Dedent, "ExpectedDedentAfterStmt")?;}
 
         return Ok(body);
     }
@@ -847,36 +850,6 @@ impl Parser {
                 let token = self.previous().clone();
                 Err(ParserError::ExpectedSemicolonAfterVariableDeclaration {
                     lexeme: token.lexeme,
-                    line: token.line,
-                })
-            },
-            "ExpectedLParenAfterFor" => {
-                let token = self.peek();
-                Err(ParserError::ExpectedLParenAfterFor {
-                    line: token.line,
-                })
-            },
-            "ExpectedSemiColonAfterForCondition" => {
-                let token = self.peek();
-                Err(ParserError::ExpectedSemiColonAfterForCondition {
-                    line: token.line,
-                })
-            },
-            "ExpectedRParenAfterForClauses" => {
-                let token = self.peek();
-                Err(ParserError::ExpectedRParenAfterForClauses {
-                    line: token.line,
-                })
-            },
-            "ExpectedLParenAfterIf" => {
-                let token = self.peek();
-                Err(ParserError::ExpectedLParenAfterIf {
-                    line: token.line,
-                })
-            },
-            "ExpectedLParenAfterCondition" => {
-                let token = self.peek();
-                Err(ParserError::ExpectedLParenAfterCondition {
                     line: token.line,
                 })
             },

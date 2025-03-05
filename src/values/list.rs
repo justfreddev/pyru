@@ -78,7 +78,7 @@ impl List {
     }
 
     /// Sorts the list using the TimSort algorithm.
-    pub fn tim_sort(&mut self) -> Result<List, EvaluatorError> {
+    pub fn tim_sort(&mut self) -> Result<&mut List, EvaluatorError> {
         let n = self.values.len();
 
         let mut run_length = self.calc_min_run(n as f32);
@@ -89,7 +89,7 @@ impl List {
         }
 
         if n <= 32 {
-            return Ok(List::new(self.values.clone()));
+            return Ok(self);
         }
 
         while run_length < n {
@@ -103,8 +103,7 @@ impl List {
             }
             run_length *= 2;
         }
-        
-        return Ok(List::new(self.values.clone()));
+        return Ok(self);
     }
 
     fn calc_min_run(&self, len: f32) -> usize {
@@ -196,6 +195,10 @@ impl fmt::Display for List {
         for (i, value) in self.values.iter().enumerate() {
             if i > 0 {
             write!(f, ", ")?;
+            }
+            if let Value::Literal(LiteralType::Str(_)) = value {
+                write!(f, "\"{}\"", value)?;
+                continue;
             }
             write!(f, "{}", value)?;
         }

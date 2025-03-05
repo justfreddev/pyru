@@ -6,6 +6,10 @@ macro_rules! arithmetic {
             if let Value::Literal(LiteralType::Num(rn)) = $num2 {
                 return Ok(Value::Literal(LiteralType::Num(ln $operator rn)));
             }
+        } else if let Value::Literal(LiteralType::Str(ls)) = $num1 {
+            if let Value::Literal(LiteralType::Str(rs)) = $num2 {
+                return Ok(Value::Literal(LiteralType::Str(format!("{}{}", ls, rs))));
+            }
         }
     };
 }

@@ -34,6 +34,7 @@ pub type Env = Rc<RefCell<Environment>>;
 /// - `output`: A vector of strings used to store output.
 pub struct Evaluator {
     pub environment: Env,
+    #[allow(unused)]
     pub globals: Env,
     output: Vec<String>,
 }
@@ -357,10 +358,13 @@ impl expr::ExprVisitor<ExprResult> for Evaluator {
                                 "insertAt" => list.insert_at(args)?,
                                 "index" => return Ok(Value::Literal(LiteralType::Num(list.index(args)? as f64))),
                                 "len" => return Ok(Value::Literal(LiteralType::Num(list.len() as f64))),
-                                "sort" => return Ok(Value::List(list.tim_sort()?)),
+                                "sort" => {
+                                    let sorted_list = list.tim_sort()?;
+                                    result_value = Some(Value::List(sorted_list.clone()));
+                                    Ok(sorted_list)?
+                                },
                                 _ => return Err(EvaluatorError::InvalidListMethod)
                             };
-
                             self.environment.borrow_mut().assign(object, Value::List(new_list.clone()))?;
                             if let Some(v) = result_value {
                                 return Ok(v);
@@ -588,6 +592,8 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                     Ok(v) => v,
                     Err(e) => return Err(Err(e)),
                 };
+
+                self.environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(&self.environment)))));
                 
                 while condition_result {
                     for stmt in body {
@@ -613,11 +619,11 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                 }
 
                 return Ok(());
-            }
+            },
             _ => return Err(Err(EvaluatorError::DifferentStatement {
                 stmt: stmt.clone(),
                 expected: "for".to_string(),
-            })),
+            }))
         }
     }
 

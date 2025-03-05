@@ -1,101 +1,23 @@
-for i in 0..10 step 2:
-  print(i);
-print(1);
-
-def makeCounter():
-  let i = 0;
-  def count():
-    i++;
-    print(i);
-  return count;
-let counter = makeCounter();
-counter();
-counter();
-
-if 1 == 1:
-  if 2 == 2:
-    if 3 == 3:
-      print(3);
-    print(2);
-  print(1);
-print(0);
-
-
-// Prints 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
-var a = "test";
-print(hash(a));
-
-var a = [23, 25, 23, 92, 83, 53, 69, 52, 61, 59, 70, 68, 50, 19, 84, 12, 17, 33, 26, 26, 7, 82, 90, 82, 21, 96, 54, 21, 65, 83, 3, 26, 47, 69, 16, 5, 46, 23, 79, 49, 62, 68, 70, 11, 94, 35, 93, 74, 33, 80, 7, 47, 86, 75, 59, 61, 44, 71, 12, 21, 79, 71, 54, 84, 99, 69, 92, 83, 28, 24, 71, 20, 94, 41, 67, 15, 40, 4, 12, 79, 22, 53, 41, 59, 18, 41, 42, 75, 65, 8, 1, 45, 42, 28, 73, 7, 30, 17, 23, 1];
-print a.sort();
-
-// Appends an incrementing number to the list and prints it out each time
-var items = [];
-for i in 0..1000:
-  items.push(i);
-  print(items);
-
-// Prints 4 4
-var items = ["apple", "banana", "cherry", "pineapple"];
-print(items.index("pineapple") + 1);
-print(items.len());
-
-// All print ["apple", "banana", "cherry", "pineapple"]
-var items = ["banana", "cherry", "pineapple"];
-items.insertAt(0, "apple");
-print(items);
-
-var items = ["apple", "banana", "cherry", "orange", "pineapple"];
-items.remove(3);
-print(items);
-
-var items = ["apple", "banana", "cherry", "pineapple", "tomato"];
-items.pop();
-print(items);
-
-var items = ["apple", "banana", "cherry"];
-items.push("pineapple");
-print(items);
-
-
-// Prints apple banana cherry
-var items = ["apple", "banana", "cherry"];
-for i in 0..items.len():
-  print(items[i]);
-
-
-// Prints [1, 2]
-var list = [1, 2, 3];
-print(list[:1]);
-
-// Prints [2, 3]
-var list = [1, 2, 3];
-print(list[1:]);
-
-
-// Prints [1, 2, 3]
-var list = [1, 2, 3];
-print(list[0:2]);
-
-
-// Prints [1, 2, 3, true]
-var a = 3;
-var list = ["1", 2, a, true];
-print(list);
-
-
-// Prints 1, 2
-def makeCounter() {
-  var i = 0;
-  def count() {
-    i++;
-    print(i);
-  }
-  return count;
-}
-var counter = makeCounter();
-counter();
-counter();
-
+// Makes a stack overflow
+def foo():
+  let a1;
+  let a2;
+  let a3;
+  let a4;
+  let a5;
+  let a6;
+  let a7;
+  let a8;
+  let a9;
+  let a10;
+  let a11;
+  let a12;
+  let a13;
+  let a14;
+  let a15;
+  let a16;
+  foo();
+foo();
 
 // Prints out nth fibonacci number up to n=20
 def fib(n):

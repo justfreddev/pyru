@@ -39,31 +39,6 @@ pub enum ParserError {
         line: usize,
     },
 
-    #[error("Expect '(' after 'for' on line {line}")]
-    ExpectedLParenAfterFor {
-        line: usize,
-    },
-
-    #[error("Expect ';' after for loop condition on line {line}")]
-    ExpectedSemiColonAfterForCondition {
-        line: usize,
-    },
-
-    #[error("Expect ')' after for loop clauses on line {line}")]
-    ExpectedRParenAfterForClauses {
-        line: usize,
-    },
-
-    #[error("Expect '(' after 'if' on line {line}")]
-    ExpectedLParenAfterIf {
-        line: usize,
-    },
-
-    #[error("Expect '(' after if condition on line {line}")]
-    ExpectedLParenAfterCondition {
-        line: usize,
-    },
-
     #[error("Expected '(' before the print value on line {line}")]
     ExpectedLParenBeforePrintValue {
         line: usize,
@@ -271,7 +246,7 @@ pub enum EvaluatorError {
     #[error("Expected an alteration token")]
     ExpectedAlterationToken,
 
-    #[error("Expected to call a function/class, not a literal value")]
+    #[error("Expected to call a function, not a literal value")]
     ExpectedFunctionOrClass,
 
     #[error("Expected {arity} arguments but got {args}")]
