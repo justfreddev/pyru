@@ -30,6 +30,10 @@ pub fn run(source: &str) -> Vec<String> {
         }
     };
 
+    for node in &ast {
+        println!("{node}");
+    }
+
     let mut semantic_analyser = SemanticAnalyser::new(ast.clone());
     match semantic_analyser.run() {
         Ok(_) => {}
@@ -51,7 +55,7 @@ pub fn run(source: &str) -> Vec<String> {
 
 #[test]
 fn test_assignment() {
-    // Associativity test
+    // Tests for associativity of assignments
     assert_eq!(
         run(r#"
 let a = "a";
@@ -81,7 +85,7 @@ print(c);
         ]
     );
 
-    // Invalid assignments
+    // Tests for invalid assignments
     assert_eq!(
         run(r#"
 let a = "a";
@@ -102,7 +106,7 @@ let a = "a";
         vec!["error".to_string()]
     );
 
-    // Undefined variable test
+    // Test for undefined variable
     assert_eq!(
         run("unknown = \"what\""),
         vec![
@@ -113,6 +117,7 @@ let a = "a";
 
 #[test]
 fn test_bool() {
+    // Test for equals with boolean values
     assert_eq!(
         run("print(true == true);"),
         vec!["true".to_string()]
@@ -130,6 +135,7 @@ fn test_bool() {
         vec!["true".to_string()]
     );
 
+    // Test for equals with mixed types
     assert_eq!(
         run("print(true == 1);"),
         vec!["false".to_string()]
@@ -151,6 +157,7 @@ fn test_bool() {
         vec!["false".to_string()]
     );
 
+    // Test for not equals with boolean values
     assert_eq!(
         run("print(true != true);"),
         vec!["false".to_string()]
@@ -168,6 +175,7 @@ fn test_bool() {
         vec!["false".to_string()]
     );
 
+    // Test for not equals with mixed types
     assert_eq!(
         run("print(true != 1);"),
         vec!["true".to_string()]
@@ -188,24 +196,11 @@ fn test_bool() {
         run("print(false != \"\");"),
         vec!["true".to_string()]
     );
-
-    
-    assert_eq!(
-        run("print(!true);"),
-        vec!["false".to_string()]
-    );
-    assert_eq!(
-        run("print(!false);"),
-        vec!["true".to_string()]
-    );
-    assert_eq!(
-        run("print(!!true);"),
-        vec!["true".to_string()]
-    );
 }
 
 #[test]
 fn test_call() {
+    // Tests for calling non-functions
     assert_eq!(
         run("true();"),
         vec!["error".to_string()]
@@ -229,6 +224,7 @@ fn test_call() {
 
 #[test]
 fn test_closures() {
+    // Test for generic closure
     assert_eq!(
         run(r#"
 def makeCounter():
@@ -246,6 +242,7 @@ counter();
         vec!["1".to_string(), "2".to_string()]
     );
 
+    // Test for closures with parameters
     assert_eq!(
         run(r#"
 let f;
@@ -261,6 +258,7 @@ f();
         vec!["param".to_string()]
     );
 
+    // Test for simple closures
     assert_eq!(
         run(r#"
 def f():
@@ -277,6 +275,7 @@ f();
         vec!["b".to_string(), "a".to_string()]
     );
 
+    // Tests for nested closures
     assert_eq!(
         run(r#"
 let f;
@@ -449,14 +448,6 @@ fn test_equality() {
 }
 
 #[test]
-fn test_evaluations() {
-    assert_eq!(
-        run("print((5 - (3 - 1)) + -1);"),
-        vec!["2".to_string()]
-    );
-}
-
-#[test]
 fn test_for_loops() {
     // Test for simple for loop
     assert_eq!(
@@ -513,11 +504,78 @@ for i in 0..5 step 2:
 
 #[test]
 fn test_functions() {
-    todo!()
+    // Test for extra arguments
+    assert_eq!(
+        run(r#"
+def f(x, y):
+    print(x);
+    print(y);
+f(1, 2, 3, 4);
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Test for missing arguments
+    assert_eq!(
+        run(r#"
+def add(x, y):
+    return x + y;
+print(add(1));
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Tests mutual recursion
+    assert_eq!(
+        run(r#"
+def isEven(n):
+    if n == 0:
+        return true;
+    return isOdd(n - 1);
+def isOdd(n):
+    if n == 0:
+        return false;
+    return isEven(n - 1);
+print(isEven(4));
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Test recursion
+    assert_eq!(
+        run(r#"
+def fib(n):
+    if n < 2:
+        return n;
+    return fib(n - 1) + fib(n - 2);
+print(fib(8));
+
+"#
+        ),
+        vec!["21".to_string()]
+    );
+
+    // Test missing comma in parameters
+    assert_eq!(
+        run(r#"
+def f(a, b c, d, e, f):
+    return a;
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
 }
 
 #[test]
 fn test_hash() {
+    // Tests for hash function
     assert_eq!(
         run("print(hash(\"123\"));"),
         vec!["a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3".to_string()]
@@ -528,6 +586,7 @@ fn test_hash() {
         vec!["0ddff3ce9c7152874283c174235342d9e9dae2d9c4a486215beae162ace030b4".to_string()]
     );
 
+    // Tests for hash equality
     assert_eq!(
         run("print(hash(\"abc\") == hash(\"abc\"));"),
         vec!["true".to_string()]
@@ -570,7 +629,7 @@ else:
         vec!["false".to_string()]
     );
 
-    // Testing truthy values
+    // Tests for truthy values in condition
     assert_eq!(
         run(r#"
 if 1:
@@ -617,18 +676,6 @@ if a = true:
         vec!["true".to_string()]
     );
 
-    // Test for membership in if condition
-    assert_eq!(
-        run(r#"
-let a = [1, 2, 3];
-if 2 in a:
-    print("true");
-
-"#
-        ),
-        vec!["true".to_string()]
-    );
-
     // Test for not in if condition
     assert_eq!(
         run(r#"
@@ -641,7 +688,7 @@ if 4 not in a:
         vec!["true".to_string()]
     );
 
-    // Test for multiple conditions
+    // Tests for multiple conditions
     assert_eq!(
         run(r#"
 let a = 3;
@@ -680,6 +727,7 @@ else:
         vec!["true".to_string()]
     );
 
+    // Test for nested if conditions
     assert_eq!(
         run(r#"
 if 1 == 1:
@@ -723,7 +771,7 @@ print(a[2]);
         vec!["1".to_string(), "2".to_string(), "3".to_string()]
     );
 
-    // Test for list slicing
+    // Tests for list slicing
     assert_eq!(
         run(r#"
 let a = [1, 2, 3, 4, 5];
@@ -915,7 +963,7 @@ print(b);
         vec!["false".to_string(), "true".to_string()]
     );
 
-    // Generic truth tests
+    // Test for and operator and its precedence
     assert_eq!(
         run(r#"
 print(false and "bad");
@@ -961,6 +1009,7 @@ print("" and "ok");
         vec!["ok".to_string()]
     );
 
+    // Tests for or operator and its precedence
     assert_eq!(
         run(r#"
 print(1 or true);
@@ -1127,7 +1176,53 @@ fn test_math() {
 }
 
 #[test]
-fn test_not_operator() {
+fn test_membership() {
+    // Test for membership in lists
+    assert_eq!(
+        run(r#"
+let a = [1, 2, 3];
+print(1 in a);
+print(4 in a);
+print(1 not in a);
+print(4 not in a);
+
+"#
+        ),
+        vec![
+            "true".to_string(),
+            "false".to_string(),
+            "false".to_string(),
+            "true".to_string()
+        ]
+    );
+
+    // Test for membership in membership in condition
+    assert_eq!(
+        run(r#"
+let a = [1, 2, 3];
+if 1 in a:
+    print("1");
+
+if 4 in a:
+    print("2");
+
+if 1 not in a:
+    print("3");
+
+if 4 not in a:
+    print("4");
+"#
+        ),
+        vec![
+            "1".to_string(),
+            "4".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn test_negation() {
+    // Tests for negating booleans
     assert_eq!(
         run("print(!true);"),
         vec!["false".to_string()]
@@ -1138,6 +1233,7 @@ fn test_not_operator() {
         vec!["true".to_string()]
     );
 
+    // Tests for double negation
     assert_eq!(
         run("print(!!true);"),
         vec!["true".to_string()]
@@ -1148,6 +1244,7 @@ fn test_not_operator() {
         vec!["false".to_string()]
     );
 
+    // Tests for negating different values
     assert_eq!(
         run("print(!123);"),
         vec!["false".to_string()]
@@ -1168,6 +1265,7 @@ fn test_not_operator() {
         vec!["false".to_string()]
     );
 
+    // Test for negating a function
     assert_eq!(
         run(r#"
 def foo():
@@ -1240,6 +1338,7 @@ fn test_not_equals() {
 
 #[test]
 fn test_nums()  {
+    // Tests for decimal points in numbers
     assert_eq!(
         run("print(123.);"),
         vec!["error".to_string()]
@@ -1255,6 +1354,7 @@ fn test_nums()  {
         vec!["123.456".to_string()]
     );
 
+    // Test for zero
     assert_eq!(
         run("print(0);"),
         vec!["0".to_string()]
@@ -1265,6 +1365,7 @@ fn test_nums()  {
         vec!["-0".to_string()]
     );
 
+    // Test for mix of decimals and negatives
     assert_eq!(
         run("print(-123.456);"),
         vec!["-123.456".to_string()]
@@ -1296,17 +1397,68 @@ print(nan != nan);
 }
 
 #[test]
+fn test_precedence() {
+    // Tests for BODMAS precedence
+    assert_eq!(
+        run("print(2 + 3 * 4);"),
+        vec!["14".to_string()]
+    );
+
+    assert_eq!(
+        run("print(20 - 3 * 4);"),
+        vec!["8".to_string()]
+    );
+
+    assert_eq!(
+        run("print(2 + 6 / 3);"),
+        vec!["4".to_string()]
+    );
+
+    assert_eq!(
+        run("print(2 - 6 / 3);"),
+        vec!["0".to_string()]
+    );
+
+    // Test for spacing with - symbol
+    assert_eq!(
+        run("print(1- 1);"),
+        vec!["0".to_string()]
+    );
+
+    // Test for left associativity
+    assert_eq!(
+        run("print(1 - 1 - 1);"),
+        vec!["-1".to_string()]
+    );
+
+    // Test for right associativity
+    assert_eq!(
+        run("print(1 - (1 - 1));"),
+        vec!["1".to_string()]
+    );
+
+    // Test for precedence with grouping
+    assert_eq!(
+        run("print(2 * (6 - (2 + 2)));"),
+        vec!["4".to_string()]
+    );
+}
+
+#[test]
 fn test_print() {
+    // Test printing a simple string
     assert_eq!(
         run("print(\"Hello, World!\");"),
         vec!["Hello, World!".to_string()]
     );
 
+    // Test an empty print statement
     assert_eq!(
         run("print();"),
         vec!["error".to_string()]
     );
 
+    // Test printing an assignment statement
     assert_eq!(
         run(r#"
 let a = 2;
@@ -1321,6 +1473,7 @@ print(a);
 
 #[test]
 fn test_returns() {
+    // Test for returning in an else branch
     assert_eq!(
         run(r#"
 def f():
@@ -1335,6 +1488,7 @@ print(f());
         vec!["ok".to_string()]
     );
 
+    // Test for returning in an if statement
     assert_eq!(
         run(r#"
 def f():
@@ -1347,6 +1501,7 @@ print(f());
         vec!["ok".to_string()]
     );
 
+    // Test for returning in a while loop
     assert_eq!(
         run(r#"
 def f():
@@ -1359,11 +1514,13 @@ print(f());
         vec!["ok".to_string()]
     );
 
+    // Test for returning at the top level
     assert_eq!(
         run("return \"at top level\";"),
         vec!["error".to_string()]
     );
 
+    // Test for unreachable print after return
     assert_eq!(
         run(r#"
 def f():
@@ -1379,11 +1536,13 @@ print(f());
 
 #[test]
 fn test_strings() {
+    // Test for string concatenation
     assert_eq!(
         run("print(\"(\" + \"\" + \")\");"),
         vec!["()".to_string()]
     );
 
+    // Test for simple strings
     assert_eq!(
         run("print(\"some string\");"),
         vec!["some string".to_string()]
@@ -1392,12 +1551,181 @@ fn test_strings() {
 
 #[test]
 fn test_variables() {
-    todo!()
+    // Test for simple variable declaration
+    assert_eq!(
+        run("let a = 1; print(a);"),
+        vec!["1".to_string()]
+    );
+
+    // Test for variable name colliding with parameter
+    assert_eq!(
+        run(r#"
+def foo(a):
+    let a;
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Test for duplicate local variables
+    assert_eq!(
+        run("let a = \"value\"; let a = \"other\";"),
+        vec!["error".to_string()]
+    );
+
+    // Test for duplicate parameters
+    assert_eq!(
+        run(r#"
+def foo(arg, arg):
+    return arg;
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Test for variable shadowing
+    assert_eq!(
+        run(r#"
+let x = 10;
+def f():
+    let x = 5;
+    print(x);
+f();
+print(x);
+
+"#
+        ),
+        vec!["5".to_string(), "10".to_string()]
+    );
+
+    // Test for variable concatenation
+    assert_eq!(
+        run(r#"
+let a = "a";
+print(a);
+let b = a + " b";
+print(b);
+let c = a + " c";
+print(c);
+let d = b + " d";
+print(d);
+
+"#
+        ),
+        vec!["a".to_string(), "a b".to_string(), "a c".to_string(), "a b d".to_string()]
+    );
+
+    // Tests for unassigned variables
+    assert_eq!(
+        run(r#"
+let a = "1";
+let a;
+print(a);
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    assert_eq!(
+        run("let a; print(a);"),
+        vec!["null".to_string()]
+    );
+
+    // Tests for undefined variables
+    assert_eq!(
+        run("print(notDefined);"),
+        vec!["error".to_string()]
+    );
+
+    assert_eq!(
+        run(r#"
+if false:
+    print(notDefined);
+print("ok");
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
+
+    // Tests for reserved keywords
+    assert_eq!(
+        run("let false = \"value\";"),
+        vec!["error".to_string()]
+    );
+
+    
+    assert_eq!(
+        run("let null = \"value\";"),
+        vec!["error".to_string()]
+    );
+
+    // Test for redefining variables
+    assert_eq!(
+        run(r#"
+let a = "value";
+let a = a;
+print(a);
+
+"#
+        ),
+        vec!["error".to_string()]
+    );
 }
 
 #[test]
 fn test_while() {
-    todo!()
-}
+    // Test for while loop with return closure
+    assert_eq!(
+        run(r#"
+def f():
+    while true:
+        let i = "i";
+        def g():
+            print(i);
+        return g;
+let h = f();
+h();
 
-// https://github.com/munificent/craftinginterpreters/blob/master/test/
+"#
+        ),
+        vec!["i".to_string()]
+    );
+
+    // Test for return inside while loop
+    assert_eq!(
+        run(r#"
+def f():
+    while true:
+        let i = "i";
+        return i;
+print(f());
+
+"#
+        ),
+        vec!["i".to_string()]
+    );
+
+    // Test normal while loop
+    assert_eq!(
+        run(r#"
+let i = 0;
+while i < 5:
+    print(i++);
+print(i);
+
+"#
+        ),
+        vec![
+            "1".to_string(),
+            "2".to_string(),
+            "3".to_string(),
+            "4".to_string(),
+            "5".to_string(),
+            "5".to_string()
+        ]
+    );
+}
