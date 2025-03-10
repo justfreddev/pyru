@@ -358,10 +358,6 @@ impl Lexer {
     }
 
     fn handle_indents(&mut self) -> Result<(), LexerError> {
-        // Checks if there is a tab, which will be at the start of a line
-        // From CPython lexer implementation
-        // https://github.com/python/cpython/blob/main/Parser/lexer/lexer.c
-        // Line 423
         if self.is_new_line {
             let mut col = 0;
             loop {
@@ -380,9 +376,7 @@ impl Lexer {
                 println!("Incorrect Indentation Error, Col: {col}");
                 return Err(LexerError::IncorrectIndentation { line: self.line });
             };
-            // dbg!(&self.source.chars().collect::<Vec<char>>()[self.curr]);
-            // dbg!(col);
-            // dbg!(indent_count);
+
             if indent_count > self.indent {
                 for _ in 0..indent_count - self.indent {
                     self.tokens.push(Token::new(

@@ -34,7 +34,7 @@ pub type Env = Rc<RefCell<Environment>>;
 /// - `output`: A vector of strings used to store output.
 pub struct Evaluator {
     pub environment: Env,
-    #[allow(unused)]
+    #[allow(dead_code)]
     pub globals: Env,
     output: Vec<String>,
 }

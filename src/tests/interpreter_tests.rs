@@ -220,7 +220,7 @@ fn test_call() {
 
 #[test]
 fn test_closures() {
-    // Test for generic closure
+    // Test for generic closures
     assert_eq!(
         run(r#"
 def makeCounter():
