@@ -6,12 +6,6 @@ use crate::{
     stmt::{self, Stmt},
 };
 
-/// Represents a symbol in the symbol table.
-#[derive(Debug)]
-enum Symbol {
-    Ident { initialised: bool },
-}
-
 /// Represents the type of a function.
 #[derive(Clone, PartialEq)]
 enum FunctionType {
@@ -32,7 +26,7 @@ enum FunctionType {
 /// `func_type` - An enum representing the type of the current function being analysed.
 pub struct SemanticAnalyser {
     ast: Vec<Stmt>,
-    symbol_tables: Vec<HashMap<String, Symbol>>, // Stack
+    symbol_tables: Vec<HashMap<String, bool>>, // Stack of HashMaps
     curr: usize,
     func_type: FunctionType,
 }
@@ -48,7 +42,7 @@ impl SemanticAnalyser {
     pub fn new(ast: Vec<Stmt>) -> Self {
         Self {
             ast,
-            symbol_tables: vec![HashMap::<String, Symbol>::new()],
+            symbol_tables: vec![HashMap::<String, bool>::new()],
             curr: 0,
             func_type: FunctionType::None,
         }
@@ -68,7 +62,7 @@ impl SemanticAnalyser {
 
     /// Begins a new scope by pushing a new symbol table onto the stack.
     fn begin_scope(&mut self) {
-        let st: HashMap<String, Symbol> = HashMap::new();
+        let st: HashMap<String, bool> = HashMap::new();
         self.curr += 1;
         self.symbol_tables.push(st)
     }
@@ -98,15 +92,8 @@ impl SemanticAnalyser {
 
     /// Checks if a variable is defined in the current scope.
     fn check_defined(&mut self, ident_name: &String) -> bool {
-        if let Some(sym) = self.symbol_tables[self.curr].get(ident_name) {
-            match sym {
-                Symbol::Ident { initialised } => {
-                    if *initialised {
-                        return true;
-                    }
-                    return false;
-                }
-            }
+        if let Some(is_initialised) = self.symbol_tables[self.curr].get(ident_name) {
+            return *is_initialised;
         }
 
         return false;
@@ -116,14 +103,14 @@ impl SemanticAnalyser {
     fn pass_function(&mut self, stmt: &Stmt, declaration: FunctionType) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Function { name, params, body } => {
-                let sym = Symbol::Ident { initialised: true };
+                let is_initialised = true;
                 
                 if self.symbol_tables[self.curr].contains_key(&name.lexeme) {
                     return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
                         name: name.lexeme.clone(),
                     });
                 }
-                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
+                self.symbol_tables[self.curr].insert(name.lexeme.clone(), is_initialised);
 
                 self.begin_scope();
 
@@ -131,16 +118,14 @@ impl SemanticAnalyser {
                 self.func_type = declaration;
 
                 for param in params {
-                    let sym = Symbol::Ident {
-                        initialised: true,
-                    };
+                    let is_initialised: bool = true;
 
                     if self.symbol_tables[self.curr].contains_key(&param.lexeme) {
                         return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
                             name: param.lexeme.clone(),
                         });
                     }
-                    self.symbol_tables[self.curr].insert(param.lexeme.clone(), sym);
+                    self.symbol_tables[self.curr].insert(param.lexeme.clone(), is_initialised);
                 }
 
                 for statement in body {
@@ -493,10 +478,8 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                     x.accept_expr(self)?;
                 }
 
-                let sym = Symbol::Ident {
-                    initialised: initializer.is_some(),
-                };
-                self.symbol_tables[self.curr].insert(name.lexeme.clone(), sym);
+                let is_initialised = initializer.is_some();
+                self.symbol_tables[self.curr].insert(name.lexeme.clone(), is_initialised);
 
                 return Ok(());
             }
