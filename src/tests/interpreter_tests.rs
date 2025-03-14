@@ -404,7 +404,7 @@ fn test_equality() {
         vec!["false".to_string()]
     );
 
-    // Test numerical inequality
+    // Test numerical equality
     assert_eq!(
         run("print(1 == 1);"),
         vec!["true".to_string()]
@@ -1192,7 +1192,7 @@ print(4 not in a);
         ]
     );
 
-    // Test for membership in membership in condition
+    // Test for membership in condition
     assert_eq!(
         run(r#"
 let a = [1, 2, 3];
@@ -1207,6 +1207,7 @@ if 1 not in a:
 
 if 4 not in a:
     print("4");
+
 "#
         ),
         vec![
@@ -1705,7 +1706,7 @@ print(f());
         vec!["i".to_string()]
     );
 
-    // Test normal while loop
+    // Test while loop with printing incrementation
     assert_eq!(
         run(r#"
 let i = 0;
@@ -1721,6 +1722,27 @@ print(i);
             "3".to_string(),
             "4".to_string(),
             "5".to_string(),
+            "5".to_string()
+        ]
+    );
+
+    // Test normal while loop
+    assert_eq!(
+        run(r#"
+let i = 0;
+while i < 5:
+    print(i);
+    i++;
+print(i);
+
+"#
+        ),
+        vec![
+            "0".to_string(),
+            "1".to_string(),
+            "2".to_string(),
+            "3".to_string(),
+            "4".to_string(),
             "5".to_string()
         ]
     );
