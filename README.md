@@ -1,3 +1,3 @@
-# The first interpreter version
+# Pyru interpreter
 
-This is my first implementation of an interpreter, following the amazing book: [Crafing Interpreters](https://craftinginterpreters.com/contents.html)
+This is my first implementation of an interpreter, that is made for a simple Python-esk language that I designed called Pyru.
