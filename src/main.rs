@@ -37,9 +37,6 @@ mod token;
 #[path = "./values/value.rs"]
 mod value;
 
-#[path = "./tests/interpreter_tests.rs"]
-mod interpreter_tests;
-
 #[cfg(test)]
 mod tests;
 
@@ -56,7 +53,7 @@ struct Message {
     source: String,
 }
 
-fn repl() -> String {
+fn _repl() -> String {
     let mut source = String::new();
     loop {
         let mut temp_source = String::new();
@@ -76,7 +73,7 @@ fn repl() -> String {
 }
 
 
-fn _make_cors() -> Cors {
+fn make_cors() -> Cors {
     let allowed_origins = AllowedOrigins::some_exact(&[ // 4.
         "http://localhost:8080",
         "http://127.0.0.1:8080",
@@ -98,7 +95,7 @@ fn _make_cors() -> Cors {
 
 
 #[post("/runcode", format = "json", data = "<message>")]
-fn _run_code(message: Json<Message>) -> Json<String> {
+fn run_code(message: Json<Message>) -> Json<String> {
     let debug = false;
     let output = run(message.source.as_str(), debug);
 
@@ -106,14 +103,14 @@ fn _run_code(message: Json<Message>) -> Json<String> {
 }
 
 
-// #[launch]
-// fn rocket() -> _ {
-//     rocket::build().mount("/v1", routes![run_code]).attach(make_cors())
-// }
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/v1", routes![run_code]).attach(make_cors())
+}
 
 
-fn main() {
-    let source = repl();
+fn _main() {
+    let source = _repl();
 
     let debug = false;
 

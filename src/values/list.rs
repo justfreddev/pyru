@@ -2,6 +2,7 @@ use std::{cmp::min, fmt};
 
 use crate::{error::EvaluatorError, value::{LiteralType, Value}};
 
+// Sets the threshold used in the Tim sort algorithm
 const THRESHOLD: f32 = 32.0;
 
 /// The `List` struct represents a list of values and provides methods for manipulating the list.
