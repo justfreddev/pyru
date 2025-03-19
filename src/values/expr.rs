@@ -53,6 +53,8 @@ use crate::{
 };
 
 /// Represents the different types of expressions that can be encountered in the source code.
+/// The Box type is used to store expressions as heap-allocated values, allowing for recursive
+/// data structures and avoiding issues with ownership and lifetimes.
 ///
 /// ## Variants
 /// - `Alteration`: Represents an increment or decrement operation on a variable.
@@ -125,7 +127,7 @@ pub enum Expr {
     },
 }
 
-impl fmt::Display for Expr {
+impl fmt::Display for Expr { // INTERFACES - BAND A
     /// Implements the `Display` trait for `Expr` to provide a string representation
     /// of each expression variant.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

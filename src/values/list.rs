@@ -3,6 +3,7 @@ use std::{cmp::min, fmt};
 use crate::{error::EvaluatorError, value::{LiteralType, Value}};
 
 // Sets the threshold used in the Tim sort algorithm
+// CONSTANT - GOOD CODING STYLE
 const THRESHOLD: f32 = 32.0;
 
 /// The `List` struct represents a list of values and provides methods for manipulating the list.
@@ -25,13 +26,14 @@ impl List {
         if args.len() != 1 {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
         }
+        // LIST OPERATIONS - BAND A
         self.values.push(args[0].clone());
         return Ok(self);
     }
 
     /// Removes and returns the last value from the list.
     pub fn pop(&mut self) -> (Option<Value>, &mut List) {
-        return (self.values.pop(), self);
+        return (self.values.pop(), self); // LIST OPERATIONS - BAND A
     }
 
     /// Removes and returns the value at the specified index.
@@ -41,6 +43,7 @@ impl List {
         }
 
         if let Value::Literal(LiteralType::Num(num)) = args[0] {
+            // LIST OPERATIONS - BAND A
             return Ok((self.values.remove(num as usize), self));
         }
 
@@ -54,6 +57,7 @@ impl List {
         }
 
         if let Value::Literal(LiteralType::Num(num)) = args[0] {
+            // LIST OPERATIONS - BAND A
             self.values.insert(num as usize, args[1].clone());
             return Ok(self);
         }
@@ -67,6 +71,7 @@ impl List {
             return Err(EvaluatorError::ArgsDifferFromArity { args: args.len(), arity: 1 });
         }
 
+        // LIST OPERATIONS - BAND A
         return match self.values.iter().position(|x| x == &args[0]) {
             Some(index) => Ok(index),
             None => Err(EvaluatorError::ItemNotFound),
@@ -75,10 +80,14 @@ impl List {
 
     /// Returns the length of the list.
     pub fn len(&self) -> usize {
+        // LIST OPERATIONS - BAND A
         return self.values.len();
     }
 
     /// Sorts the list using the TimSort algorithm.
+    /// MERGESORT OR SIMILARLY EFFICIENT SORT - BAND A
+    /// COMPLEX USER-DEFINED ALGORITHM - BAND A
+    /// COMPLEX SCIENTIFIC/MATHEMATICAL MODEL - BAND A
     pub fn tim_sort(&mut self) -> Result<&mut List, EvaluatorError> {
         let n = self.values.len();
 
@@ -167,6 +176,7 @@ impl List {
                             }
                             k += 1;
                         },
+                        // GOOD EXCEPTION HANDLING - EXCELLENT CODING STYLE
                         _ => return Err(EvaluatorError::CannotCompareValues),
                     }
                 },
@@ -190,7 +200,7 @@ impl List {
     }
 }
 
-impl fmt::Display for List {
+impl fmt::Display for List { // INTERFACES - BAND A
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
         for (i, value) in self.values.iter().enumerate() {

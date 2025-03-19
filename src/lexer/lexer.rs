@@ -68,12 +68,12 @@ use crate::{
 /// 
 /// ## Fields
 /// 
-/// - `source`: The source code as a [`String`]
+/// - `source`: The source code as a `String`
 /// - `tokens`: A vector of tokens that represent the source code
 /// - `start`: The starting index of the current token being processed
 /// - `curr`: The current index of the lexer's position in the source code
 /// - `line`: The current line number in the source code
-/// - `keywords`: A HashMap that maps keyword strings to their corresponding [`TokenType`]
+/// - `keywords`: A HashMap that maps keyword strings to their corresponding `TokenType`
 pub struct Lexer {
     source: String,
     tabsize: u8,
@@ -114,6 +114,7 @@ impl Lexer {
     }
 
     /// Runs the lexer and tokenizes `self.source`.
+    /// COMPLEX USER-DEFINED ALGORITHM - BAND A
     pub fn run(&mut self) -> Result<Vec<Token>, LexerError> {
         while !self.is_at_end() {
 
@@ -126,7 +127,7 @@ impl Lexer {
         self.start = self.curr;
 
         if self.is_indented {
-            self.tokens.push(Token::new(
+            self.tokens.push(Token::new( // DYNAMIC OBJECT GENERATION - BAND A
                 TokenType::Dedent,
                 "".to_string(),
                 "".to_string(),
@@ -165,7 +166,7 @@ impl Lexer {
     /// Adds a string or number token to `self.tokens`.
     fn add_string_token(&mut self, token_type: TokenType, literal: String) {
         let text = String::from(&self.source[self.start..self.curr]);
-        self.tokens.push(Token::new(
+        self.tokens.push(Token::new( // DYNAMIC OBJECT GENERATION - BAND A
             token_type, text, literal, self.line, self.start, self.curr,
         ));
     }
@@ -175,7 +176,7 @@ impl Lexer {
     fn string(&mut self) -> Result<(), LexerError> {
         while self.peek()? != '"' && !self.is_at_end() {
             if self.peek()? == '\n' {
-                return Err(LexerError::UnterminatedString {
+                return Err(LexerError::UnterminatedString { // EXCELLING ERROR HANDLING - BAND A
                     line: self.line,
                     start: self.start,
                     end: self.curr

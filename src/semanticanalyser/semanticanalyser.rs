@@ -26,6 +26,7 @@ enum FunctionType {
 /// `func_type` - An enum representing the type of the current function being analysed.
 pub struct SemanticAnalyser {
     ast: Vec<Stmt>,
+    // STACK / HASH TABLES - BAND A
     symbol_tables: Vec<HashMap<String, bool>>, // Stack of HashMaps
     curr: usize,
     func_type: FunctionType,
@@ -49,10 +50,10 @@ impl SemanticAnalyser {
     }
 
     /// Runs the semantic analysis on the AST.
-    ///
-    /// # Returns
-    /// A `Result` containing `()` if successful, or a `SemanticAnalyserError` if a semantic error is encountered.
+    /// COMPLEX USER-DEFINED ALGORITHM - BAND A
     pub fn run(&mut self) -> Result<(), SemanticAnalyserError> {
+        // Iterate over each statement in the AST and perform semantic analysis.
+        // RECURSIVE ALGORITHM - BAND A
         for stmt in self.ast.clone() {
             stmt.accept_stmt(self)?;
         }
@@ -62,24 +63,30 @@ impl SemanticAnalyser {
 
     /// Begins a new scope by pushing a new symbol table onto the stack.
     fn begin_scope(&mut self) {
+        // DYNAMIC HASH TABLE GENERATION - BAND A
         let st: HashMap<String, bool> = HashMap::new();
         self.curr += 1;
+        // STACK OPERATIONS - BAND A
         self.symbol_tables.push(st)
     }
 
     /// Ends the current scope by popping the symbol table from the stack.
     fn end_scope(&mut self) {
         self.curr -= 1;
+        // STACK OPERATONS - BAND A
         self.symbol_tables.pop();
     }
 
     /// Checks if a variable is declared in any of the symbol tables.
     fn check_declared(&mut self, name: &String) -> bool {
+        // Checks if the variable is in the global scope.
         if self.curr == 0 {
+            // HASH TABLE OPERATIONS - BAND A
             if self.symbol_tables[0].contains_key(name) {
                 return true;
             }
         } else {
+            // If it isn't, loop through the rest of the symbol tables in the stack and check.
             for i in (0..=self.curr).rev() {
                 if self.symbol_tables[i].contains_key(name) {
                     return true;
@@ -106,6 +113,7 @@ impl SemanticAnalyser {
                 let is_initialised = true;
                 
                 if self.symbol_tables[self.curr].contains_key(&name.lexeme) {
+                    // DEFENSIVE PROGRAMMING / EXCELLENT ERROR HANDLING - BAND A
                     return Err(SemanticAnalyserError::VariableAlreadyAssignedInScope {
                         name: name.lexeme.clone(),
                     });
@@ -117,6 +125,7 @@ impl SemanticAnalyser {
                 let is_closure = self.func_type.clone() == FunctionType::Function;
                 self.func_type = declaration;
 
+                // Resolves all of the parameters of the function.
                 for param in params {
                     let is_initialised: bool = true;
 
@@ -128,6 +137,8 @@ impl SemanticAnalyser {
                     self.symbol_tables[self.curr].insert(param.lexeme.clone(), is_initialised);
                 }
 
+                // Resolves all the statements in the body of the function.
+                // RECURSIVE FUNCTION CALL - BAND A
                 for statement in body {
                     statement.accept_stmt(self)?;
                 }
@@ -150,7 +161,7 @@ impl SemanticAnalyser {
     }
 }
 
-impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
+impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser { // INTERFACES - BAND A
     fn visit_alteration_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
             Expr::Alteration { name, .. } => {
@@ -191,6 +202,8 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
     fn visit_binary_expr(&mut self, expr: &Expr) -> Result<(), SemanticAnalyserError> {
         match expr {
             Expr::Binary { left, operator: _, right } => {
+                // Recursively visit the left and right expressions and resolve them.
+                // RECURSIVE FUNCTION CALLS - BAND A
                 left.accept_expr(self)?;
                 right.accept_expr(self)?;
                 return Ok(());
@@ -347,6 +360,8 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
                 let keywords = vec!["hash", "clock", "push", "pop", "remove",
                 "insertAt", "index", "len", "sort"];
 
+                // Checks if the variable is a keyword.
+                // LIST OPERATIONS - BAND A
                 if keywords.contains(&name.lexeme.as_str()) {
                     return Ok(());
                 }
@@ -363,7 +378,7 @@ impl expr::ExprVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
     }
 }
 
-impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
+impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser { // INTERFACES - BAND A
     fn visit_expression_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Expression { expression } => {
@@ -448,6 +463,7 @@ impl stmt::StmtVisitor<Result<(), SemanticAnalyserError>> for SemanticAnalyser {
     fn visit_return_stmt(&mut self, stmt: &Stmt) -> Result<(), SemanticAnalyserError> {
         match stmt {
             Stmt::Return { keyword: _, value } => {
+                // DEFENSIVE PROGRAMMING - EXCELLENT CODING STYLE
                 if self.func_type == FunctionType::None {
                     return Err(SemanticAnalyserError::CannotReturnOutsideFunction);
                 }

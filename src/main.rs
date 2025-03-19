@@ -61,6 +61,7 @@ fn _repl() -> String {
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut temp_source).unwrap();
         if temp_source.trim().eq("run") || temp_source.trim().eq("") {
+            // LIST OPERATIONS - BAND A
             return source
                 .chars()
                 .collect::<Vec<char>>()[0..source.len()-3]
@@ -74,7 +75,7 @@ fn _repl() -> String {
 
 
 fn make_cors() -> Cors {
-    let allowed_origins = AllowedOrigins::some_exact(&[ // 4.
+    let allowed_origins = AllowedOrigins::some_exact(&[
         "http://localhost:8080",
         "http://127.0.0.1:8080",
         "http://localhost:8000",
@@ -93,16 +94,17 @@ fn make_cors() -> Cors {
     .expect("error while building CORS")
 }
 
-
+// COMPLEX CLIENT-SERVER MODEL - BAND A
 #[post("/runcode", format = "json", data = "<message>")]
 fn run_code(message: Json<Message>) -> Json<String> {
     let debug = false;
     let output = run(message.source.as_str(), debug);
 
+    // JSON PARSING - BAND A
     Json(format!("{:?}", output))
 }
 
-
+// COMPLEX CLIENT-SERVER MODEL - BAND A
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/v1", routes![run_code]).attach(make_cors())

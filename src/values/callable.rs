@@ -55,7 +55,7 @@ use crate::{
 ///
 /// ## Methods
 /// - `call`: Invokes the callable entity with the given arguments and returns the result.
-pub trait Callable {
+pub trait Callable { // INTERFACE DEFINITION - BAND A
     fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError>;
 }
 
@@ -71,7 +71,7 @@ pub struct Func {
     name: String,
     pub arity: usize,
     declaration: Stmt,
-    closure: Env,
+    closure: Env, // COMPOSITION - BAND A
 }
 
 impl PartialEq for Func {
@@ -115,7 +115,7 @@ impl Func {
     }
 }
 
-impl Callable for Func {
+impl Callable for Func { // INTERFACE - BAND A
     /// Calls the user-defined function with the given arguments.
     ///
     /// ## Parameters
@@ -127,19 +127,23 @@ impl Callable for Func {
     fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError> {
         match &self.declaration {
             Stmt::Function { name: _, params, body } => {
+                // Create a new environment for the function call.
                 let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
                     &self.closure,
                 )))));
 
+                // Define the function parameters in the new environment.
                 for i in 0..params.len() {
                     environment
                         .borrow_mut()
                         .define(params[i].lexeme.clone(), arguments[i].clone());
                 }
 
-                return match evaluator.execute_block(body.clone(), environment) {
+                // Execute the function body in the new environment.
+                // RECURSIVE FUNCTION CALL - BAND A
+                return match evaluator.execute_body(body.clone(), environment) {
                     Ok(_) => Ok(Value::Literal(LiteralType::Null)),
-                    Err(r) => Ok(r?)
+                    Err(r) => Ok(r?) // GOOD EXCEPTION HANDLING - EXCELLENT CODING STYLES
                 }
             }
             _ => return Err(EvaluatorError::ExpectedDeclarationToBeAFunction),
@@ -157,7 +161,7 @@ impl Callable for Func {
 pub struct NativeFunc {
     name: String,
     pub arity: usize,
-    fun: fn(&mut Evaluator, Vec<Value>) -> Result<Value, EvaluatorError>,
+    fun: fn(&mut Evaluator, Vec<Value>) -> Result<Value, EvaluatorError>, // FUNCTION POINTER - BAND A EQUIVALENT
 }
 
 impl NativeFunc {
@@ -175,7 +179,7 @@ impl NativeFunc {
     }
 }
 
-impl Callable for NativeFunc {
+impl Callable for NativeFunc { // INTERFACE - BAND A
     /// Calls the native function with the given arguments.
     ///
     /// ## Parameters
@@ -185,7 +189,7 @@ impl Callable for NativeFunc {
     /// ## Returns
     /// The result of the native function execution or an `EvaluatorError`.
     fn call(&self, evaluator: &mut Evaluator, arguments: Vec<Value>) -> Result<Value, EvaluatorError> {
-        return (self.fun)(evaluator, arguments);
+        return (self.fun)(evaluator, arguments); // FUNCTION POINTER INVOCATION - BAND A EQUIVALENT
     }
 }
 

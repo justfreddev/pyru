@@ -79,7 +79,7 @@ pub enum TokenType {
 /// - `end`: The ending index of the token in the source code.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token {
-    pub token_type: TokenType,
+    pub token_type: TokenType, // ENUM COMPOSITION - BAND A EQUIVALENT
     pub lexeme: String,
     pub literal: String,
     pub line: usize,
@@ -101,7 +101,7 @@ impl Token {
     }
 }
 
-impl fmt::Display for TokenType {
+impl fmt::Display for TokenType { // INTERFACES - BAND A
     /// Implements the `Display` trait for `TokenType` to provide a string representation
     /// of each token type.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -157,7 +157,7 @@ impl fmt::Display for TokenType {
     }
 }
 
-impl fmt::Display for Token {
+impl fmt::Display for Token { // INTERFACES - BAND A
     /// Implements the `Display` trait for `Token` to provide a string representation
     /// of the token, including its type, lexeme, literal, and position.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

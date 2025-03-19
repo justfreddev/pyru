@@ -47,6 +47,10 @@ macro_rules! alteration {
 
 #[macro_export]
 /// Populates the `kw` hashmap with the passed in keywords
+/// 
+/// This macro takes two arguments:
+/// 1. `$kw:expr` - A mutable reference to a hashmap (or any structure that supports `insert`).
+/// 2. `$($kws:ident),+` - A comma-separated list of identifiers (keywords).
 macro_rules! keywords {
     ( $kw:expr ; $($kws:ident),+ ) => {
         $(
@@ -57,7 +61,11 @@ macro_rules! keywords {
 }
 
 #[macro_export]
-// Generates the visitor design pattern for statements
+/// Generates the visitor design pattern for statements
+/// 
+/// The `+` in the argument means that the macro expects one or more identifiers, separated by commas.
+/// 
+/// It uses the `paste!` macro to dynamically generate method names by concatenating strings.
 macro_rules! stmt_visitor {
     ( $($stmts:ident),+ ) => {
         pub trait StmtVisitor<T> {
@@ -85,7 +93,8 @@ macro_rules! stmt_visitor {
 }
 
 #[macro_export]
-// Generates the visitor design pattern for expressions
+/// Generates the visitor design pattern for expressions
+/// This works the exact same as the stmt_visitor.
 macro_rules! expr_visitor {
     ( $($exprs:ident),+ ) => {
         pub trait ExprVisitor<T> {
