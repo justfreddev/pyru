@@ -94,13 +94,13 @@ impl Evaluator {
     }
 
     /// Evaluates an expression.
-        fn evaluate(&mut self, expr: &Expr) -> Result<Value, EvaluatorError> {
-            // Calls the appropriate method based on the expression type.
-            return match expr.accept_expr(self) { // RECURSIVE ALGORITHM - BAND A
-                Ok(v) => Ok(v),
-                Err(e) => Err(e),
-            }
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, EvaluatorError> {
+        // Calls the appropriate method based on the expression type.
+        return match expr.accept_expr(self) { // RECURSIVE ALGORITHM - BAND A
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
         }
+    }
 
     /// Executes a statement.
     fn execute(&mut self, stmt: &Stmt) -> StmtResult {
