@@ -48,6 +48,8 @@ use std::io::Write;
 
 use run::run;
 
+use crate::run::{ Output, run_with_all_outputs };
+
 #[derive(Serialize, Deserialize)]
 struct Message {
     source: String,
@@ -96,11 +98,9 @@ fn make_cors() -> Cors {
 }
 
 #[post("/runcode", format = "json", data = "<message>")]
-fn run_code(message: Json<Message>) -> Json<String> {
-    let debug = false;
-    let output = run(message.source.as_str(), debug);
-
-    Json(format!("{:?}", output))
+fn run_code(message: Json<Message>) -> Json<Output> {
+    let output = run_with_all_outputs(message.source.as_str());
+    Json(output)
 }
 
 #[launch]

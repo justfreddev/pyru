@@ -581,7 +581,7 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
             Stmt::For { initializer, condition, step, body } => {
                 match self.execute(initializer) {
                     Ok(_) => {},
-                    Err(r) => return Err(Ok(r)?),
+                    Err(r) => return Err(r),
                 };
 
                 let mut condition_evaluation = match self.evaluate(condition) {
@@ -599,7 +599,10 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                     for stmt in body {
                         match self.execute(stmt) {
                             Ok(_) => {}
-                            Err(r) => return Err(Ok(r)?)
+                            Err(r) => match r {
+                                Ok(v) => return Err(Ok(v)),
+                                Err(e) => return Err(Err(e)),
+                            }
                         };
                     }
 
@@ -673,7 +676,7 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                 } else if else_branch.is_some() {
                     match self.execute(&else_branch.as_ref().unwrap()) {
                         Ok(_) => {},
-                        Err(r) => return Err(Ok(r)?)
+                        Err(r) => return Err(r)
                     };
                 }
 
@@ -775,7 +778,10 @@ impl stmt::StmtVisitor<StmtResult> for Evaluator {
                     for stmt in body {
                         match self.execute(stmt) {
                             Ok(_) => {},
-                            Err(r) => return Err(Ok(r)?)
+                            Err(r) => match r {
+                                Ok(v) => return Err(Ok(v)),
+                                Err(e) => return Err(Err(e)),
+                            }
                         };
                     }
 
