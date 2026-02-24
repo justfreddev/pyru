@@ -75,20 +75,11 @@ struct Message {
 // }
 
 fn make_cors() -> Cors {
-    let allowed_origins = AllowedOrigins::some_exact(
-        &[
-            "http://localhost:8080",
-            "http://127.0.0.1:8080",
-            "http://localhost:8000",
-            "http://0.0.0.0:8000",
-            "http://localhost:5173",
-            "https://pyru-playground.vercel.app",
-        ]
-    );
+    let allowed_origins = AllowedOrigins::all();
 
     (CorsOptions {
         allowed_origins,
-        allowed_methods: vec![Method::Post, Method::Options].into_iter().map(From::from).collect(),
+        allowed_methods: vec![Method::Post, Method::Get, Method::Options].into_iter().map(From::from).collect(),
         allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         ..Default::default()
