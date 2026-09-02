@@ -40,63 +40,38 @@ mod value;
 #[cfg(test)]
 mod tests;
 
-#[allow(unused)]
-use rocket::{ http::Method, launch, post, routes };
-use rocket::serde::{ Deserialize, Serialize, json::Json };
-use rocket_cors::{ AllowedHeaders, AllowedOrigins, Cors, CorsOptions };
-use std::io::Write;
+use actix_cors::Cors;
+use actix_web::{ web, App, HttpServer, Responder };
+use serde::{ Deserialize, Serialize };
 
-use run::run;
-
-use crate::run::{ Output, run_with_all_outputs };
+use crate::run::run_with_all_outputs;
 
 #[derive(Serialize, Deserialize)]
 struct Message {
     source: String,
 }
 
-// fn _repl() -> String {
-//     let mut source = String::new();
-//     loop {
-//         let mut temp_source = String::new();
-//         print!("> ");
-//         std::io::stdout().flush().unwrap();
-//         std::io::stdin().read_line(&mut temp_source).unwrap();
-//         if temp_source.trim().eq("run") || temp_source.trim().eq("") {
-//             return source
-//                 .chars()
-//                 .collect::<Vec<char>>()[0..source.len()-3]
-//                 .iter()
-//                 .collect::<String>();
-//         }
-//         temp_source.push('\n');
-//         source.push_str(&temp_source);
-//     }
-// }
-
-fn make_cors() -> Cors {
-    let allowed_origins = AllowedOrigins::all();
-
-    (CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Post, Method::Get, Method::Options].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::all(),
-        allow_credentials: false,
-        ..Default::default()
-    })
-        .to_cors()
-        .expect("error while building CORS")
-}
-
-#[post("/runcode", format = "json", data = "<message>")]
-fn run_code(message: Json<Message>) -> Json<Output> {
+async fn run_code(message: web::Json<Message>) -> impl Responder {
     let output = run_with_all_outputs(message.source.as_str());
-    Json(output)
+    web::Json(output)
 }
 
-#[launch]
-async fn rocket() -> _ {
-    rocket::build().mount("/v1", routes![run_code]).attach(make_cors())
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    let port: u16 = std::env
+          ::var("PORT")
+          .unwrap_or_else(|_| "8080".to_string())
+          .parse()
+          .expect("PORT must be a number");
+
+    HttpServer::new(|| {
+        App::new()
+            .wrap(Cors::permissive())
+            .service(web::scope("/v1").route("/runcode", web::post().to(run_code)))
+    })
+    .bind(("0.0.0.0", port))?
+    .run()
+    .await
 }
 
 // fn _main() {
